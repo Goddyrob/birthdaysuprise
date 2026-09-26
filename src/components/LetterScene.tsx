@@ -100,7 +100,7 @@ export const LetterScene: React.FC<LetterSceneProps> = ({
 
             {/* Tap cue badge */}
             <div className="absolute bottom-3 z-20 text-[11px] font-semibold text-pink-900 bg-white/90 px-3 py-1 rounded-full shadow-sm">
-              Click to Open 💌
+              Click to Open
             </div>
           </motion.div>
         )}
@@ -168,7 +168,7 @@ export const LetterScene: React.FC<LetterSceneProps> = ({
                   onClick={onNext}
                   className="ml-auto px-8 py-3 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white font-serif text-base sm:text-lg font-bold rounded-full shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 flex items-center gap-2 cursor-pointer transition-all"
                 >
-                  <span>Next ✨</span>
+                  <span>Next</span>
                   <ArrowRight size={18} />
                 </motion.button>
               </div>

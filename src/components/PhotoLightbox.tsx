@@ -1,14 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Download, Heart, Calendar } from 'lucide-react';
+import { X, Download, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PhotoItem } from '../types';
 
 interface PhotoLightboxProps {
   photo: PhotoItem | null;
   onClose: () => void;
+  photos?: PhotoItem[];
+  photoIndex?: number;
+  onPrevious?: () => void;
+  onNext?: () => void;
 }
 
-export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photo, onClose }) => {
+export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photo, onClose, photos = [], photoIndex = 0, onPrevious, onNext }) => {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowLeft') onPrevious?.();
+      if (event.key === 'ArrowRight') onNext?.();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, onNext, onPrevious]);
+
   if (!photo) return null;
 
   const handleDownload = () => {
@@ -37,10 +51,30 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photo, onClose }) 
           {/* Close button */}
           <button
             onClick={onClose}
+            aria-label="Close photo"
             className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white text-gray-800 shadow-xl border border-gray-200 flex items-center justify-center hover:bg-pink-50 hover:text-pink-600 transition-colors cursor-pointer z-30"
           >
             <X size={20} />
           </button>
+
+          {photos.length > 1 && (
+            <>
+              <button
+                onClick={onPrevious}
+                aria-label="Previous photo"
+                className="absolute left-2 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-gray-800 shadow-xl hover:bg-pink-50 hover:text-pink-600"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                onClick={onNext}
+                aria-label="Next photo"
+                className="absolute right-2 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-gray-800 shadow-xl hover:bg-pink-50 hover:text-pink-600"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
 
           {/* Photo container */}
           <div className="w-full aspect-[4/4.5] rounded-xl overflow-hidden bg-gray-900 shadow-inner relative">
@@ -63,6 +97,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photo, onClose }) 
                 <span>{photo.date}</span>
               </div>
             )}
+            {photos.length > 1 && <p className="mt-2 text-xs font-semibold text-gray-500">{photoIndex + 1} / {photos.length}</p>}
           </div>
 
           {/* Download Button (Matching Reference Video 00:23) */}

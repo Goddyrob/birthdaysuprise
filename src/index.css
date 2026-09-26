@@ -25,6 +25,21 @@
   font-family: var(--font-hand);
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  overscroll-behavior-x: none;
+}
+
+.safe-area-bottom {
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
 /* Custom scrollbar for letter */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

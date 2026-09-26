@@ -231,7 +231,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute bottom-2 pointer-events-none flex items-center gap-1 text-xs font-semibold text-pink-600 bg-white/90 px-3 py-1 rounded-full shadow-md border border-pink-200"
             >
-              <span>👉 Swipe to slice</span>
+              <span>Swipe to slice</span>
             </motion.div>
           )}
         </div>
@@ -249,7 +249,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
                 onClick={onNext}
                 className="px-8 py-3.5 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white font-serif text-lg sm:text-xl font-bold rounded-full shadow-xl shadow-pink-500/30 hover:shadow-pink-500/50 border border-pink-300/60 flex items-center gap-2 cursor-pointer transition-all animate-pulse-slow"
               >
-                <span>Next Scene ✨</span>
+                <span>Next Scene</span>
                 <ArrowRight size={20} />
               </motion.button>
             )}

@@ -47,7 +47,7 @@
 - Open love notes and the “reasons I love you” experience.
 - Reset the experience or clear gallery photos whenever you need.
 
-All configuration is saved in the browser with `localStorage`. Uploaded images are kept locally as data URLs, so this project does not require a database or account backend.
+Creator configuration is saved through the Express API into Supabase. The experience configuration is stored as JSONB, passcodes are stored only as bcrypt hashes, and uploaded images or audio are stored in a private Supabase Storage bucket. The recipient receives only safe metadata until the server verifies the passcode.
 
 ## Run it locally
 
@@ -62,11 +62,11 @@ npm run dev
 
 ### 2. Open the website
 
-Visit [http://localhost:3000](http://localhost:3000) in a modern browser. The Vite server runs on port `3000` and reloads the page automatically when you edit the source.
+Visit [http://localhost:3000](http://localhost:3000) in a modern browser. The development command starts Vite and the Express API together.
 
 ### 3. Try the demo
 
-The default landing-page passcode is `1234`. After unlocking, follow the experience in order: pull the lamp cord, swipe across the cake to cut it, read the letter, and explore the floating photo gallery.
+The default demo passcode is `1234`. A created surprise requires the passcode configured by its creator. After unlocking, follow the experience in order: pull the lamp cord, swipe across the cake to cut it, read the letter, and explore the floating photo gallery.
 
 > Audio playback may require one click or tap because browsers block autoplay until the user interacts with the page.
 
@@ -78,6 +78,18 @@ npm run build    # Create a production build
 npm run preview  # Preview the production build locally
 npm run lint     # Run the TypeScript check
 ```
+
+## Supabase setup
+
+1. Create a Supabase project.
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL Editor.
+3. Copy [`.env.example`](.env.example) to `.env` for local development.
+4. Set `SUPABASE_URL` and the server-only `SUPABASE_SERVICE_ROLE_KEY`.
+5. Deploy the built frontend and Express server together, or configure a host that supports both a Vite build and a long-running Node process.
+
+The browser never receives the service-role key and never queries Supabase directly. `GET /api/surprises/:id` returns metadata only; `POST /api/surprises/:id/unlock` verifies the submitted passcode and returns the protected configuration with short-lived signed media URLs.
+
+Production share links use `/surprise/<uuid>`. The host must route that path to `dist/index.html` and route `/api/*` to the Express server. Do not use a static-only deployment unless its API functions are separately configured to provide the same endpoints.
 
 ## Project map
 

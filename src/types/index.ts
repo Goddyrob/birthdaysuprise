@@ -27,4 +27,9 @@ export interface AppConfig {
   musicTitle?: string;
 }
 
+export interface ShareResult {
+  url: string;
+  copied: boolean;
+}
+
 export type SceneType = 'landing' | 'lamp' | 'cake' | 'letter' | 'space';

@@ -6,12 +6,14 @@ interface MusicPlayerProps {
   customMusicTitle?: string;
   onUploadCustomMusic?: (file: File) => void;
   dark?: boolean;
+  canUpload?: boolean;
 }
 
 export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   customMusicTitle = 'Romantic Melody 🎵',
   onUploadCustomMusic,
-  dark = false
+  dark = false,
+  canUpload = true,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.35);
@@ -130,20 +132,24 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
               className="w-16 h-1 bg-pink-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
             />
 
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              title="Upload Your Own Song (MP3)"
-              className="p-1 text-pink-500 hover:text-pink-600 rounded"
-            >
-              <Upload size={15} />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
+            {canUpload && (
+              <>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload Your Own Song (MP3)"
+                  className="p-1 text-pink-500 hover:text-pink-600 rounded"
+                >
+                  <Upload size={15} />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </>
+            )}
           </div>
         )}
       </div>

@@ -1,10 +1,12 @@
 import { AppConfig } from '../types';
 
+const defaultSurpriseImage = '/default-surprise.svg';
+
 export const DEFAULT_CONFIG: AppConfig = {
   recipientName: 'My Love',
   senderName: 'Yours Forever',
   // Romantic couple mirror selfie with love vibes
-  mainPhoto: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1000&auto=format&fit=crop',
+  mainPhoto: defaultSurpriseImage,
   polaroidText: 'Happy Birthday ❤️',
   passcode: '1234',
   cakeHeading: 'Swipe to Cut the Cake! 🎂',
@@ -24,7 +26,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     {
       id: 'photo-1',
       // Romantic couple holding hands forming heart & fairy lights
-      url: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1000&auto=format&fit=crop',
+      url: defaultSurpriseImage,
       caption: 'The way your eyes shine when you laugh ✨',
       date: 'Our Favorite Day',
       rotation: -5,
@@ -35,8 +37,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     {
       id: 'photo-2',
-      // Romantic couple holding hands walking together
-      url: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=1000&auto=format&fit=crop',
+      // Bundled local memory illustration
+      url: '/memory-sunset.svg',
       caption: 'Holding your hand through every season 🍂',
       date: 'Autumn Walk',
       rotation: 6,
@@ -47,8 +49,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     {
       id: 'photo-3',
-      // Romantic couple sunset golden hour embrace
-      url: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=1000&auto=format&fit=crop',
+      // Bundled local memory illustration
+      url: '/memory-lavender.svg',
       caption: 'Golden hour looks best with you 🌅',
       date: 'Sunset Magic',
       rotation: -6,
@@ -59,8 +61,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     {
       id: 'photo-4',
-      // Cute couple hands together with heart
-      url: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1000&auto=format&fit=crop',
+      // Bundled local memory illustration
+      url: '/memory-peach.svg',
       caption: 'Little moments that become forever memories ☕',
       date: 'Coffee & Us',
       rotation: 5,
@@ -71,8 +73,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     {
       id: 'photo-5',
-      // Romantic sweet couple warm hug & forehead touch
-      url: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=1000&auto=format&fit=crop',
+      // Bundled local memory illustration
+      url: '/memory-night.svg',
       caption: 'Together is my favorite place to be 💕',
       date: 'Just Us Two',
       rotation: -2,
@@ -83,8 +85,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     {
       id: 'photo-6',
-      // Sweet couple laughing warmly together
-      url: 'https://images.unsplash.com/photo-1543807535-eceef0bc6599?q=80&w=1000&auto=format&fit=crop',
+      // Bundled local memory illustration
+      url: '/memory-blush.svg',
       caption: 'You make every ordinary moment feel magical 🌸',
       date: 'Sweet Moments',
       rotation: 7,
@@ -95,8 +97,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     {
       id: 'photo-7',
-      // Romantic couple cuddle at sunset
-      url: 'https://images.unsplash.com/photo-1474552226712-ac0f0961a954?q=80&w=1000&auto=format&fit=crop',
+      // Bundled local memory illustration
+      url: '/memory-rose.svg',
       caption: 'Here is to a lifetime of adventures together 🚀',
       date: 'Forever & Always',
       rotation: -4,

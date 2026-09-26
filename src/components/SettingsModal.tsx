@@ -13,8 +13,9 @@ import {
   Mail,
   Cake,
   Check,
+  RotateCcw,
 } from 'lucide-react';
-import { AppConfig, PhotoItem } from '../types';
+import { AppConfig, PhotoItem, ShareResult } from '../types';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface SettingsModalProps {
   onResetDefaults: () => void;
   onClearPhotos: () => void;
   onReplay: () => void;
+  onShareCurrentConfig?: (config?: AppConfig) => Promise<ShareResult>;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -34,10 +36,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onResetDefaults,
   onClearPhotos,
   onReplay,
+  onShareCurrentConfig,
 }) => {
   const [activeTab, setActiveTab] = useState<'photos' | 'text' | 'letter' | 'audio'>('photos');
   const [tempConfig, setTempConfig] = useState<AppConfig>(config);
   const [savedBadge, setSavedBadge] = useState(false);
+  const [shareError, setShareError] = useState('');
+  const [shareUrl, setShareUrl] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const mainPhotoInputRef = useRef<HTMLInputElement>(null);
   const galleryPhotosInputRef = useRef<HTMLInputElement>(null);
@@ -135,6 +142,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }, 600);
   };
 
+  const handleShare = async () => {
+    if (!onShareCurrentConfig || isSharing) return;
+    setShareError('');
+    setShareUrl('');
+    setShareCopied(false);
+    setIsSharing(true);
+    try {
+      const result = await onShareCurrentConfig(tempConfig);
+      onSave(tempConfig);
+      setShareUrl(result.url);
+      setShareCopied(result.copied);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'MediaUploadError') {
+        setShareError('Your image could not be uploaded. Please choose it again and retry.');
+      } else {
+        setShareError('Your surprise could not be created. Please retry.');
+      }
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -151,7 +180,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
               <h2 className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
-                Customize Experience ✨
+                Customize experience
               </h2>
             </div>
             <button
@@ -165,10 +194,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Navigation Tabs */}
           <div className="flex border-b border-pink-100 bg-pink-50/40 px-6 gap-2 sm:gap-4 overflow-x-auto">
             {[
-              { id: 'photos', label: 'Photos 📸', icon: ImageIcon },
-              { id: 'text', label: 'Names & Passcode 🔑', icon: Key },
-              { id: 'letter', label: 'Love Letter 💌', icon: Mail },
-              { id: 'audio', label: 'Music 🎵', icon: Music },
+              { id: 'photos', label: 'Photos', icon: ImageIcon },
+              { id: 'text', label: 'Names & Passcode', icon: Key },
+              { id: 'letter', label: 'Love Letter', icon: Mail },
+              { id: 'audio', label: 'Music', icon: Music },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -179,6 +208,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     : 'border-transparent text-gray-500 hover:text-pink-500'
                 }`}
               >
+                <tab.icon size={14} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -186,6 +216,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* Tab Content Body */}
           <div className="p-6 overflow-y-auto flex-1 space-y-6 custom-scrollbar text-left select-text">
+            {onShareCurrentConfig && (
+              <div className="flex justify-end">
+                <button
+                  onClick={handleShare}
+                  disabled={isSharing}
+                  className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs font-semibold text-pink-700 transition hover:bg-pink-100"
+                >
+                  {isSharing ? 'Creating link...' : shareCopied ? <><Check size={14} /> Link copied!</> : 'Copy link'}
+                </button>
+              </div>
+            )}
+            {shareError && <p className="text-right text-xs font-medium text-rose-600" role="alert">{shareError}</p>}
+            {shareUrl && (
+              <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/60 p-3">
+                <p className="text-sm font-semibold text-pink-800">Your surprise is ready!</p>
+                <input
+                  readOnly
+                  value={shareUrl}
+                  aria-label="Surprise link"
+                  onFocus={(event) => event.currentTarget.select()}
+                  className="w-full rounded-lg border border-pink-200 bg-white px-3 py-2 text-xs text-gray-700"
+                />
+                {!shareCopied && <p className="text-xs text-gray-600">Your surprise is ready. Copy the link below.</p>}
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(shareUrl);
+                      setShareCopied(true);
+                    } catch {
+                      setShareError('Clipboard access is unavailable. Select the link above to copy it manually.');
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-pink-300 bg-white px-3 py-1.5 text-xs font-semibold text-pink-700"
+                >
+                  <Check size={14} /> Copy link
+                </button>
+              </div>
+            )}
             {/* TAB 1: PHOTOS */}
             {activeTab === 'photos' && (
               <div className="space-y-6">
@@ -501,7 +569,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }}
               className="px-4 py-2 text-xs sm:text-sm font-semibold text-gray-600 hover:text-pink-600 hover:bg-pink-100/60 rounded-xl transition-colors cursor-pointer"
             >
-              🔄 Replay Journey
+              <RotateCcw size={14} />
+              Replay Journey
             </button>
 
             <div className="flex items-center gap-2">
@@ -516,7 +585,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 className="px-6 py-2.5 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-pink-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 {savedBadge ? <Check size={16} /> : null}
-                <span>{savedBadge ? 'Saved! ✨' : 'Save Changes'}</span>
+                <span>{savedBadge ? 'Saved' : 'Save changes'}</span>
               </button>
             </div>
           </div>

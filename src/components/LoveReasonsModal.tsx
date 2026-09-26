@@ -91,7 +91,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
               <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
-                Reasons I Love You ❤️
+                Reasons I love you
               </h3>
             </div>
             <button
@@ -124,7 +124,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
               }`}
             >
               <Bookmark size={15} />
-              <span>Sweet Quotes 💌</span>
+              <span>Sweet Quotes</span>
             </button>
             <button
               onClick={() => setActiveTab('meter')}
@@ -135,7 +135,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
               }`}
             >
               <Sparkles size={15} />
-              <span>Love Meter 💖</span>
+              <span>Love Meter</span>
             </button>
           </div>
 
@@ -170,7 +170,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
                       className="px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs sm:text-sm font-semibold rounded-full shadow-md shadow-pink-500/20 flex items-center gap-2 mx-auto cursor-pointer transition-all active:scale-95"
                     >
                       <Sparkles size={15} />
-                      <span>Unlock Next Reason ✨</span>
+                      <span>Unlock next reason</span>
                     </button>
                   </div>
                 ) : (
@@ -233,7 +233,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
                   className="px-6 py-2.5 bg-pink-100 hover:bg-pink-200 text-pink-700 text-xs sm:text-sm font-semibold rounded-full border border-pink-300 flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <RefreshCw size={14} />
-                  <span>Test Again ✨</span>
+                  <span>Test again</span>
                 </button>
               </div>
             )}

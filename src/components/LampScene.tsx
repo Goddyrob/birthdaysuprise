@@ -148,7 +148,7 @@ export const LampScene: React.FC<LampSceneProps> = ({ onComplete }) => {
         >
           <Sparkles className="w-5 h-5 text-pink-500 animate-spin" style={{ animationDuration: '6s' }} />
           <span className="font-serif text-lg sm:text-xl font-semibold text-gray-800">
-            {isLit ? 'Lighting up your special day... ✨' : 'Pull the string to turn on the light 💡'}
+            {isLit ? 'Lighting up your special day...' : 'Pull the string to turn on the light'}
           </span>
         </motion.div>
 

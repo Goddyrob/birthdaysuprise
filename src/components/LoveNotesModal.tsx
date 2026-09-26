@@ -63,7 +63,7 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-pink-500" />
                 <h3 className="font-serif text-xl font-bold text-gray-800">
-                  Sweet Notes & Wishes 💌
+                  Sweet notes & wishes
                 </h3>
               </div>
               <button

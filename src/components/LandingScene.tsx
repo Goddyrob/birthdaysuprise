@@ -1,8 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Heart, MessageCircle, Repeat, Camera, Sparkles, Settings, KeyRound, Gift } from 'lucide-react';
 import { playKeySound, playPasscodeSuccessSound } from '../utils/audio';
 import confetti from 'canvas-confetti';
+import { AppConfig, ShareResult } from '../types';
+
+const defaultSurpriseImage = '/default-surprise.svg';
 
 interface LandingSceneProps {
   mainPhoto: string;
@@ -14,6 +17,11 @@ interface LandingSceneProps {
   onOpenSettings: () => void;
   onOpenNotes: () => void;
   onOpenLoveReasons: () => void;
+  onShare: (config?: AppConfig) => Promise<ShareResult>;
+  passcodeLength?: number;
+  onUnlock?: (passcode: string) => Promise<boolean>;
+  isLocked?: boolean;
+  isRecipientMode?: boolean;
 }
 
 export const LandingScene: React.FC<LandingSceneProps> = ({
@@ -26,17 +34,40 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
   onOpenSettings,
   onOpenNotes,
   onOpenLoveReasons,
+  onShare,
+  passcodeLength,
+  onUnlock,
+  isLocked = false,
+  isRecipientMode = false,
 }) => {
   const [enteredDigits, setEnteredDigits] = useState<string[]>([]);
   const [likesCount, setLikesCount] = useState(999);
   const [hasLiked, setHasLiked] = useState(false);
   const [sharesCount, setSharesCount] = useState(5);
   const [errorShake, setErrorShake] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
+  const [mainPhotoLoaded, setMainPhotoLoaded] = useState(false);
+  const [pendingSuccess, setPendingSuccess] = useState(false);
   const [floatingHearts, setFloatingHearts] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [imageFailed, setImageFailed] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const expectedLength = passcode.length || 4;
+  useEffect(() => {
+    setImageFailed(false);
+    setMainPhotoLoaded(false);
+  }, [mainPhoto]);
+
+  useEffect(() => {
+    if (!pendingSuccess || (onUnlock && mainPhoto && !mainPhotoLoaded)) return;
+    const timer = window.setTimeout(() => {
+      setPendingSuccess(false);
+      onSuccess();
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [mainPhoto, mainPhotoLoaded, onSuccess, onUnlock, pendingSuccess]);
+
+  const expectedLength = passcodeLength || passcode.length || 4;
 
   const handleDigitPress = (digit: string) => {
     playKeySound();
@@ -50,29 +81,37 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
 
     const next = [...enteredDigits, digit];
     setEnteredDigits(next);
+    setUnlockError('');
 
     if (next.length === expectedLength) {
       const code = next.join('');
-      // If matches passcode or wildcard unlock
-      if (code === passcode || passcode === '') {
-        playPasscodeSuccessSound();
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ec4899', '#f43f5e', '#fda4af', '#fcd34d']
-        });
-        setTimeout(() => {
-          onSuccess();
-        }, 500);
-      } else {
-        // Wrong passcode - shake and clear
+      const unlock = async () => {
+        const isValid = onUnlock ? await onUnlock(code) : code === passcode || passcode === '';
+        if (isValid) {
+          playPasscodeSuccessSound();
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#ec4899', '#f43f5e', '#fda4af', '#fcd34d']
+          });
+          setPendingSuccess(true);
+          return;
+        }
+
+        setUnlockError('That passcode is not correct. Please try again.');
         setErrorShake(true);
         setTimeout(() => {
           setErrorShake(false);
           setEnteredDigits([]);
         }, 600);
-      }
+      };
+
+      void unlock().catch(() => {
+        setUnlockError('This surprise could not be unlocked right now. Please try again.');
+        setEnteredDigits([]);
+      });
+      return;
     }
   };
 
@@ -94,11 +133,13 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
     }, 1500);
   };
 
-  const handleShareClick = () => {
+  const handleShareClick = async () => {
     setSharesCount((prev) => prev + 1);
     playKeySound();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+    try {
+      await onShare();
+    } catch (e) {
+      // noop
     }
   };
 
@@ -158,25 +199,38 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
 
               {/* Polaroid Image Area */}
               <div className="relative aspect-[4/4.5] w-full overflow-hidden rounded-lg bg-pink-50 shadow-inner">
-                <img
-                  src={mainPhoto}
-                  alt="Birthday Memory"
-                  className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-105"
-                />
+                {isLocked && !mainPhoto ? (
+                  <div className="h-full w-full bg-gradient-to-br from-pink-200 via-rose-100 to-amber-100" aria-label="Locked surprise" />
+                ) : mainPhoto && !imageFailed ? (
+                  <img
+                    src={mainPhoto}
+                    alt="Birthday Memory"
+                    onLoad={() => setMainPhotoLoaded(true)}
+                    onError={() => {
+                      setImageFailed(true);
+                      setMainPhotoLoaded(true);
+                    }}
+                    className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <img src={defaultSurpriseImage} alt="A romantic birthday memory" className="h-full w-full object-cover" />
+                )}
 
                 {/* Upload Button Overlay */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 bg-black/40 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2 font-medium cursor-pointer"
-                  title="Click to change photo"
-                >
-                  <div className="p-3 bg-pink-500/80 rounded-full text-white shadow-lg">
-                    <Camera size={24} />
-                  </div>
-                  <span className="text-sm font-semibold tracking-wide bg-black/50 px-3 py-1 rounded-full">
-                    Change Photo 📸
-                  </span>
-                </button>
+                {!isRecipientMode && !isLocked && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute inset-0 bg-black/40 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-2 font-medium cursor-pointer"
+                    title="Click to change photo"
+                  >
+                    <div className="p-3 bg-pink-500/80 rounded-full text-white shadow-lg">
+                      <Camera size={24} />
+                    </div>
+                    <span className="text-sm font-semibold tracking-wide bg-black/50 px-3 py-1 rounded-full">
+                      Change Photo
+                    </span>
+                  </button>
+                )}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -195,14 +249,14 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
             </motion.div>
 
             {/* Mobile-only quick photo upload hint */}
-            <div className="mt-3 block sm:hidden">
+            {!isRecipientMode && !isLocked && <div className="mt-3 block sm:hidden">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="text-xs font-medium text-pink-600 flex items-center gap-1 bg-pink-100/80 px-3 py-1.5 rounded-full"
               >
                 <Camera size={14} /> Tap to upload your photo
               </button>
-            </div>
+            </div>}
           </div>
 
           {/* CENTER-RIGHT SIDE: Large Passcode Input & Keypad */}
@@ -272,23 +326,26 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
             {/* Passcode helper / Instant unlock for testing */}
             <div className="mt-5 flex items-center justify-center gap-3">
               <span className="text-xs text-pink-700/70 font-medium bg-pink-100/60 px-3 py-1 rounded-full">
-                Hint: {passcode || '1234'}
+                {onUnlock ? 'Enter your private passcode' : `Hint: ${passcode || '1234'}`}
               </span>
-              <button
-                onClick={() => {
-                  playPasscodeSuccessSound();
-                  onSuccess();
-                }}
-                className="text-xs text-pink-600 hover:text-pink-800 font-semibold underline flex items-center gap-1"
-                title="Bypass passcode"
-              >
-                <KeyRound size={12} /> Unlock Directly ✨
-              </button>
+              {!onUnlock && (
+                <button
+                  onClick={() => {
+                    playPasscodeSuccessSound();
+                    onSuccess();
+                  }}
+                  className="text-xs text-pink-600 hover:text-pink-800 font-semibold underline flex items-center gap-1"
+                  title="Bypass passcode"
+                >
+                  <KeyRound size={12} /> Unlock Directly
+                </button>
+              )}
             </div>
+            {unlockError && <p className="mt-3 text-sm font-medium text-rose-600" role="alert">{unlockError}</p>}
           </div>
 
           {/* RIGHT RAIL: TikTok / Instagram Style Interactive Action Bar (Matching Reference Video) */}
-          <div className="lg:col-span-1 flex flex-row lg:flex-col items-center justify-center gap-6 lg:gap-8 lg:border-l lg:border-pink-200/60 lg:pl-6">
+          {!isRecipientMode && !isLocked && <div className="lg:col-span-1 flex flex-row lg:flex-col items-center justify-center gap-6 lg:gap-8 lg:border-l lg:border-pink-200/60 lg:pl-6">
             
             {/* Heart Likes Button */}
             <div className="flex flex-col items-center">
@@ -296,7 +353,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 whileTap={{ scale: 1.25 }}
                 onClick={handleLikeClick}
                 className="p-3 rounded-full bg-white/90 shadow-lg text-pink-500 hover:bg-pink-50 transition-colors border border-pink-100 cursor-pointer"
-                title="Give love ❤️"
+                title="Give love"
               >
                 <Heart
                   size={24}
@@ -315,7 +372,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 whileTap={{ scale: 0.92 }}
                 onClick={onOpenLoveReasons}
                 className="p-3 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 shadow-lg text-white hover:from-pink-600 hover:to-rose-600 transition-all border border-pink-300 cursor-pointer"
-                title="Why I Love You ❤️"
+                title="Why I Love You"
               >
                 <Gift size={22} className="text-white" />
               </motion.button>
@@ -364,7 +421,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
               <span className="text-[10px] text-pink-600 uppercase tracking-wider font-medium mt-1">Edit</span>
             </div>
 
-          </div>
+          </div>}
 
         </div>
       </motion.div>
