@@ -23,17 +23,23 @@ const SHARE_PARAM = 'surprise';
 
 const getSharedSurpriseId = (): string | null => {
   if (typeof window === 'undefined') return null;
-  const routeMatch = window.location.pathname.match(/^\/surprise\/([^/]+)$/);
-  if (routeMatch) return routeMatch[1];
+  const routeMatch = window.location.pathname.match(/^\/surprise\/([^/]+)\/?$/);
+  if (routeMatch) {
+    try {
+      return decodeURIComponent(routeMatch[1]);
+    } catch {
+      return null;
+    }
+  }
   const params = new URLSearchParams(window.location.search);
   return params.get(SHARE_PARAM) || null;
 };
 
-const buildShareableUrl = (id: string) => {
-  const url = new URL(window.location.href);
-  url.search = '';
-  url.pathname = `/surprise/${id}`;
-  return url.toString();
+const buildShareableUrl = (id: unknown) => {
+  if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    throw new Error('Surprise creation returned an invalid ID');
+  }
+  return new URL(`/surprise/${id}`, window.location.origin).toString();
 };
 
 const createLockedConfig = (recipientName: string, senderName: string): AppConfig => ({
@@ -83,8 +89,13 @@ export default function App() {
     fetch(`/api/surprises/${encodeURIComponent(sharedSurpriseId)}`)
       .then(async (response) => {
         if (!response.ok) {
-          const error = new Error(response.status === 404 ? 'Surprise not found' : 'Unable to load surprise');
-          error.name = response.status === 404 ? 'NotFoundError' : 'NetworkError';
+          const contentType = response.headers.get('content-type') || '';
+          const result = contentType.includes('application/json')
+            ? await response.json().catch(() => null)
+            : null;
+          const isSurpriseNotFound = response.status === 404 && result?.error === 'Surprise not found';
+          const error = new Error(isSurpriseNotFound ? 'Surprise not found' : 'Unable to load surprise');
+          error.name = isSurpriseNotFound ? 'NotFoundError' : 'NetworkError';
           throw error;
         }
         const result = await response.json();

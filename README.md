@@ -255,7 +255,7 @@ server/
 
 ## 🌍 Vercel Deployment
 
-The Vercel deployment builds the Vite frontend from `npm run build` and serves it from `dist`. The serverless function in `api/[...path].js` exports the same Express API app used by the local server. `vercel.json` sends `/surprise/<uuid>` to the SPA while leaving `/api/*` to the API function.
+The Vercel deployment builds the Vite frontend from `npm run build` and serves it from `dist`. The explicit functions in `api/health.js`, `api/surprises.js`, `api/surprises/[id].js` and `api/surprises/[id]/unlock.js` all export the same Express API app used by the local server. `vercel.json` sends `/surprise/<uuid>` to the SPA while leaving `/api/*` to the matching API function.
 
 In **Vercel → Project → Settings → Environment Variables**, configure:
 
