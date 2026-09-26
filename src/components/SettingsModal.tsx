@@ -144,6 +144,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleShare = async () => {
     if (!onShareCurrentConfig || isSharing) return;
+    if (shareUrl) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareCopied(true);
+        setShareError('');
+      } catch {
+        setShareCopied(false);
+        setShareError('Clipboard access is unavailable. Select the link above to copy it manually.');
+      }
+      return;
+    }
     setShareError('');
     setShareUrl('');
     setShareCopied(false);
@@ -168,15 +179,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm select-none">
+      <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/60 backdrop-blur-sm select-none sm:items-center sm:p-4">
         <motion.div
           initial={{ scale: 0.92, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.92, opacity: 0, y: 20 }}
-          className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-pink-200 overflow-hidden flex flex-col max-h-[90vh]"
+          className="flex h-[100dvh] max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden border-pink-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:border"
         >
           {/* Top Bar */}
-          <div className="px-6 py-4 border-b border-pink-100 flex items-center justify-between bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50">
+          <div className="flex items-center justify-between border-b border-pink-100 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
               <h2 className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
@@ -185,14 +196,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-pink-100 transition-colors"
+              aria-label="Close customization"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-pink-100 hover:text-gray-700"
             >
               <X size={20} />
             </button>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-pink-100 bg-pink-50/40 px-6 gap-2 sm:gap-4 overflow-x-auto">
+          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-pink-100 bg-pink-50/40 px-3 sm:gap-4 sm:px-6">
             {[
               { id: 'photos', label: 'Photos', icon: ImageIcon },
               { id: 'text', label: 'Names & Passcode', icon: Key },
@@ -202,7 +214,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-2.5 text-xs font-semibold transition-all sm:px-4 sm:py-3 sm:text-sm ${
                   activeTab === tab.id
                     ? 'border-pink-500 text-pink-600 bg-white/60 rounded-t-lg'
                     : 'border-transparent text-gray-500 hover:text-pink-500'
@@ -215,16 +227,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Tab Content Body */}
-          <div className="p-6 overflow-y-auto flex-1 space-y-6 custom-scrollbar text-left select-text">
+          <div
+            onFocusCapture={(event) => {
+              const target = event.target;
+              if (!(target instanceof HTMLElement) || !target.matches('input, textarea')) return;
+              window.setTimeout(() => target.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 250);
+            }}
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 text-left [scroll-padding-bottom:1rem] select-text custom-scrollbar sm:space-y-6 sm:p-6"
+          >
             {onShareCurrentConfig && (
-              <div className="flex justify-end">
-                <button
-                  onClick={handleShare}
-                  disabled={isSharing}
-                  className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs font-semibold text-pink-700 transition hover:bg-pink-100"
-                >
-                  {isSharing ? 'Creating link...' : shareCopied ? <><Check size={14} /> Link copied!</> : 'Copy link'}
-                </button>
+              <div className="sr-only" role="status" aria-live="polite">
+                {isSharing ? 'Creating link' : shareCopied ? 'Link copied' : shareUrl ? 'Link ready' : ''}
               </div>
             )}
             {shareError && <p className="text-right text-xs font-medium text-rose-600" role="alert">{shareError}</p>}
@@ -561,28 +574,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Bottom Actions */}
-          <div className="px-6 py-4 border-t border-pink-100 bg-pink-50/40 flex items-center justify-between">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-pink-100 bg-pink-50/40 px-3 py-2.5 sm:flex-nowrap sm:px-6 sm:py-4">
+            {onShareCurrentConfig && (
+              <button
+                onClick={handleShare}
+                disabled={isSharing}
+                className="order-first flex min-h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-700 hover:to-rose-600 disabled:opacity-60 sm:order-last sm:w-auto sm:text-sm"
+              >
+                {isSharing ? 'Creating link...' : shareCopied ? <><Check size={16} className="mr-1.5" /> Link copied!</> : shareUrl ? 'Copy link' : 'Create link'}
+              </button>
+            )}
             <button
               onClick={() => {
                 onClose();
                 onReplay();
               }}
-              className="px-4 py-2 text-xs sm:text-sm font-semibold text-gray-600 hover:text-pink-600 hover:bg-pink-100/60 rounded-xl transition-colors cursor-pointer"
+              aria-label="Replay journey"
+              className="flex min-h-11 items-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-pink-100/60 hover:text-pink-600 sm:px-4 sm:text-sm"
             >
               <RotateCcw size={14} />
-              Replay Journey
+              <span className="max-[390px]:hidden sm:inline">Replay Journey</span>
             </button>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-xs sm:text-sm font-semibold text-gray-500 hover:text-gray-700 rounded-xl transition-colors"
+                className="min-h-11 rounded-xl px-2 py-2 text-xs font-semibold text-gray-500 transition-colors hover:text-gray-700 sm:px-4 sm:text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-2.5 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-pink-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-600 hover:to-rose-600 sm:px-6 sm:text-sm"
               >
                 {savedBadge ? <Check size={16} /> : null}
                 <span>{savedBadge ? 'Saved' : 'Save changes'}</span>

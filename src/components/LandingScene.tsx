@@ -157,29 +157,29 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-hidden bg-gradient-to-br from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2]">
+    <div className="relative flex min-h-[100dvh] w-full items-start justify-center overflow-y-auto bg-gradient-to-br from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] px-3 pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.75rem))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:items-center lg:p-8">
       {/* Background Soft Glow Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-pink-300/30 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-rose-200/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="pointer-events-none absolute left-1/4 top-1/4 hidden h-96 w-96 rounded-full bg-pink-300/30 blur-3xl sm:block" />
+      <div className="pointer-events-none absolute bottom-1/4 right-1/4 hidden h-96 w-96 rounded-full bg-rose-200/40 blur-3xl sm:block" />
 
       {/* Main Glass/Pastel Card Container */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-5xl rounded-[2.5rem] bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_20px_60px_-15px_rgba(236,72,153,0.15)] p-6 sm:p-10 lg:p-14"
+        className="relative z-10 my-auto w-full max-w-5xl rounded-[1.5rem] border border-white/80 bg-white/75 p-2 shadow-[0_20px_60px_-15px_rgba(236,72,153,0.15)] backdrop-blur-xl min-[360px]:p-3 sm:rounded-[2.5rem] sm:p-8 lg:p-14"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 items-center gap-2 max-[359px]:grid-cols-[minmax(0,0.95fr)_minmax(8.5rem,1.05fr)] min-[360px]:grid-cols-2 min-[360px]:gap-3 sm:gap-8 lg:grid-cols-12 lg:gap-12">
           
           {/* LEFT SIDE: Large Polaroid Photo with Pink Ribbon */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center">
+          <div className="col-span-1 flex flex-col items-center justify-center min-[360px]:col-span-1 lg:col-span-6">
             <motion.div
               whileHover={{ rotate: 1, scale: 1.02 }}
               transition={{ type: 'spring', stiffness: 300 }}
-              className="relative group w-full max-w-[340px] sm:max-w-[380px] bg-white p-4 pb-7 rounded-2xl shadow-2xl border border-pink-100/80 transform -rotate-1.5 transition-transform"
+              className="group relative w-full max-w-[340px] rotate-[-1.5deg] rounded-xl border border-pink-100/80 bg-white p-2 pb-3 shadow-xl transition-transform max-[359px]:max-w-none max-[359px]:p-1.5 max-[359px]:pb-2 sm:max-w-[380px] sm:rounded-2xl sm:p-4 sm:pb-7 sm:shadow-2xl"
             >
               {/* Decorative Pink Ribbon/Bow graphic top-left (Matching Reference Video) */}
-              <div className="absolute -top-4 -left-4 z-20 w-16 h-16 pointer-events-none drop-shadow-md select-none">
+              <div className="pointer-events-none absolute -left-2 -top-2 z-20 h-10 w-10 select-none drop-shadow-md sm:-left-4 sm:-top-4 sm:h-16 sm:w-16">
                 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                   {/* Left Loop */}
                   <path d="M50 45 C30 15, 10 30, 25 50 C35 60, 48 48, 50 45 Z" fill="#f472b6" />
@@ -241,15 +241,15 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
               </div>
 
               {/* Polaroid Handwritten Caption */}
-              <div className="mt-4 text-center">
-                <p className="font-script text-2xl sm:text-3xl text-gray-800 tracking-wide">
+              <div className="mt-2 text-center sm:mt-4">
+                <p className="font-script text-lg leading-tight text-gray-800 sm:text-3xl sm:tracking-wide">
                   {polaroidText}
                 </p>
               </div>
             </motion.div>
 
             {/* Mobile-only quick photo upload hint */}
-            {!isRecipientMode && !isLocked && <div className="mt-3 block sm:hidden">
+            {!isRecipientMode && !isLocked && <div className="mt-2 block sm:hidden">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="text-xs font-medium text-pink-600 flex items-center gap-1 bg-pink-100/80 px-3 py-1.5 rounded-full"
@@ -260,12 +260,12 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
           </div>
 
           {/* CENTER-RIGHT SIDE: Large Passcode Input & Keypad */}
-          <div className="lg:col-span-5 flex flex-col items-center text-center">
+          <div className="col-span-1 flex flex-col items-center text-center min-[360px]:col-span-1 lg:col-span-5">
             {/* Heading (Large typography matching instructions) */}
             <motion.h1
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 tracking-tight"
+              className="font-serif text-xl font-bold leading-tight text-gray-800 sm:text-4xl lg:text-5xl"
             >
               Enter Passcode
             </motion.h1>
@@ -274,21 +274,21 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
             <motion.div
               animate={errorShake ? { x: [-10, 10, -8, 8, -4, 4, 0] } : {}}
               transition={{ duration: 0.4 }}
-              className="my-5 sm:my-6 flex items-center justify-center gap-3 sm:gap-4"
+              className="my-2.5 flex w-full max-w-[248px] items-center justify-center gap-1.5 sm:my-6 sm:gap-4"
             >
               {Array.from({ length: expectedLength }).map((_, idx) => {
                 const isFilled = idx < enteredDigits.length;
                 return (
                   <div
                     key={idx}
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-300 border ${
+                    className={`aspect-square w-full max-w-10 rounded-xl border flex items-center justify-center transition-all duration-300 sm:h-12 sm:w-12 sm:max-w-none sm:rounded-2xl ${
                       isFilled
                         ? 'bg-gradient-to-br from-pink-400 to-rose-500 border-pink-400 text-white shadow-md shadow-pink-400/30 scale-105'
                         : 'bg-white/80 border-pink-200 text-pink-300'
                     }`}
                   >
                     {isFilled ? (
-                      <Heart size={20} className="fill-current text-white animate-pulse" />
+                      <Heart size={20} className="h-4 w-4 fill-current text-white sm:h-5 sm:w-5" />
                     ) : (
                       <span className="text-pink-300 font-bold text-lg">•</span>
                     )}
@@ -298,7 +298,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
             </motion.div>
 
             {/* Circular Keypad (1 - 10, *, 0) */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-[280px] sm:max-w-[320px] w-full">
+            <div className="grid w-full max-w-[220px] grid-cols-3 gap-1.5 max-[359px]:gap-0.5 sm:max-w-[320px] sm:gap-4">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '10'].map((val) => {
                 const isBack = val === '*' || val === '10';
                 const label = val === '10' ? '⌫' : val === '*' ? '♥' : val;
@@ -309,7 +309,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleDigitPress(val === '10' ? 'del' : val)}
-                    className="w-16 h-16 sm:w-18 sm:h-18 mx-auto rounded-full bg-white/90 hover:bg-white text-gray-800 hover:text-pink-600 font-sans text-xl sm:text-2xl font-bold shadow-md hover:shadow-lg border border-pink-100/90 flex items-center justify-center transition-colors cursor-pointer select-none"
+                    className="mx-auto flex h-11 w-11 select-none items-center justify-center rounded-full border border-pink-100/90 bg-white/90 font-sans text-lg font-bold text-gray-800 shadow-md transition-colors hover:bg-white hover:text-pink-600 active:scale-95 sm:h-[72px] sm:w-[72px] sm:text-2xl"
                   >
                     {isBack && val === '10' ? (
                       <span className="text-base sm:text-lg text-pink-500">⌫</span>
@@ -324,8 +324,8 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
             </div>
 
             {/* Passcode helper / Instant unlock for testing */}
-            <div className="mt-5 flex items-center justify-center gap-3">
-              <span className="text-xs text-pink-700/70 font-medium bg-pink-100/60 px-3 py-1 rounded-full">
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 sm:mt-5 sm:gap-3">
+              <span className="rounded-full bg-pink-100/60 px-2 py-1 text-[10px] font-medium text-pink-700/70 sm:px-3 sm:text-xs">
                 {onUnlock ? 'Enter your private passcode' : `Hint: ${passcode || '1234'}`}
               </span>
               {!onUnlock && (
@@ -334,18 +334,18 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                     playPasscodeSuccessSound();
                     onSuccess();
                   }}
-                  className="text-xs text-pink-600 hover:text-pink-800 font-semibold underline flex items-center gap-1"
+                  className="flex min-h-10 items-center gap-1 px-1 text-[11px] font-semibold text-pink-600 underline hover:text-pink-800 sm:text-xs"
                   title="Bypass passcode"
                 >
                   <KeyRound size={12} /> Unlock Directly
                 </button>
               )}
             </div>
-            {unlockError && <p className="mt-3 text-sm font-medium text-rose-600" role="alert">{unlockError}</p>}
+            {unlockError && <p className="mt-2 text-xs font-medium text-rose-600 sm:mt-3 sm:text-sm" role="alert">{unlockError}</p>}
           </div>
 
           {/* RIGHT RAIL: TikTok / Instagram Style Interactive Action Bar (Matching Reference Video) */}
-          {!isRecipientMode && !isLocked && <div className="lg:col-span-1 flex flex-row lg:flex-col items-center justify-center gap-6 lg:gap-8 lg:border-l lg:border-pink-200/60 lg:pl-6">
+          {!isRecipientMode && !isLocked && <div className="col-span-full flex w-full flex-row items-center justify-around gap-1 border-t border-pink-200/60 pt-2 lg:col-span-1 lg:flex-col lg:gap-8 lg:border-l lg:border-t-0 lg:pt-0 lg:pl-6">
             
             {/* Heart Likes Button */}
             <div className="flex flex-col items-center">

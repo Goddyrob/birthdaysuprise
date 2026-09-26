@@ -279,43 +279,47 @@ export default function App() {
 
   if (entryMode === 'home') {
     return (
-      <main className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 flex items-center justify-center p-6 text-gray-800">
+      <main className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-y-auto bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] text-gray-800 sm:p-6">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.18),_transparent_35%),radial-gradient(circle_at_bottom,_rgba(251,191,36,0.15),_transparent_30%)]" />
 
-        <div className="relative z-10 w-full max-w-4xl rounded-[2rem] border border-pink-200/80 bg-white/70 p-8 shadow-[0_20px_80px_-25px_rgba(244,114,182,0.4)] backdrop-blur-xl sm:p-12">
+        <div className="relative z-10 w-full max-w-4xl rounded-[1.5rem] border border-pink-200/80 bg-white/75 p-5 shadow-[0_20px_80px_-25px_rgba(244,114,182,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-8 md:p-12">
           <div className="text-center">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.35em] text-pink-500">Birthday surprise</p>
-            <h1 className="font-serif text-4xl font-bold text-gray-800 sm:text-5xl">A little love, beautifully wrapped</h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base text-gray-600 sm:text-lg">
-              Let the demo guide your loved one through a romantic surprise, or create a custom page and send a shareable link to family, friends, or your partner.
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-pink-500 sm:mb-4 sm:text-xs sm:tracking-[0.35em]">Birthday surprise</p>
+            <h1 className="mx-auto max-w-2xl font-serif text-[2rem] font-bold leading-[1.08] text-gray-800 sm:text-4xl md:text-5xl">A little love, beautifully wrapped</h1>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-5 text-gray-600 sm:mt-5 sm:text-base sm:leading-relaxed md:text-lg">
+              Create something special and share it with someone you love.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <div className="mt-5 grid gap-2.5 sm:mt-8 sm:gap-4 md:mt-10 md:grid-cols-2 md:gap-6">
             <button
               onClick={handleStartDemo}
-              className="group rounded-[1.5rem] border border-pink-200 bg-gradient-to-br from-pink-500 to-rose-500 p-6 text-left text-white shadow-lg shadow-pink-200 transition hover:-translate-y-1 hover:shadow-xl"
+              className="group order-2 flex min-h-14 w-full items-center gap-3 rounded-xl border border-pink-200 bg-white/90 p-3.5 text-left text-gray-800 shadow-sm transition hover:bg-white active:scale-[0.99] md:order-1 md:min-h-0 md:block md:rounded-[1.5rem] md:border-pink-200 md:bg-gradient-to-br md:from-pink-500 md:to-rose-500 md:p-6 md:text-white md:shadow-lg md:shadow-pink-200 md:hover:-translate-y-1 md:hover:shadow-xl"
             >
-              <div className="mb-4 inline-flex rounded-full bg-white/15 p-3">
-                <Gift size={24} />
+              <div className="inline-flex shrink-0 rounded-full bg-pink-100 p-2 text-pink-600 md:mb-4 md:bg-white/15 md:p-3 md:text-white">
+                <Gift size={20} className="md:h-6 md:w-6" />
               </div>
-              <h2 className="text-2xl font-bold">Try the demo</h2>
-              <p className="mt-3 text-sm text-pink-50/90">
+              <div>
+                <h2 className="text-sm font-bold sm:text-base md:text-2xl">Try the demo</h2>
+                <p className="mt-0.5 hidden text-sm text-pink-50/90 md:mt-3 md:block">
                 Experience the full guided surprise flow with the default romantic message, music, and gallery.
-              </p>
+                </p>
+              </div>
             </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="group rounded-[1.5rem] border border-amber-200 bg-gradient-to-br from-amber-100 to-orange-100 p-6 text-left text-gray-800 shadow-lg shadow-amber-200 transition hover:-translate-y-1 hover:shadow-xl"
+              className="group order-1 flex min-h-[4.5rem] w-full items-center gap-3 rounded-xl border border-pink-300 bg-gradient-to-r from-pink-600 to-rose-500 p-3.5 text-left text-white shadow-md shadow-pink-300/50 transition hover:shadow-lg active:scale-[0.99] md:order-2 md:min-h-0 md:block md:rounded-[1.5rem] md:border-amber-200 md:bg-gradient-to-br md:from-amber-100 md:to-orange-100 md:p-6 md:text-gray-800 md:shadow-lg md:shadow-amber-200 md:hover:-translate-y-1 md:hover:shadow-xl"
             >
-              <div className="mb-4 inline-flex rounded-full bg-white/70 p-3">
-                <Settings size={24} className="text-amber-600" />
+              <div className="inline-flex shrink-0 rounded-full bg-white/15 p-2.5 md:mb-4 md:bg-white/70 md:p-3">
+                <Settings size={20} className="text-white md:h-6 md:w-6 md:text-amber-600" />
               </div>
-              <h2 className="text-2xl font-bold">Create my surprise link</h2>
-              <p className="mt-3 text-sm text-gray-600">
-                Personalize the names, photos, letter, and music, then copy a shareable link for your loved one or family.
-              </p>
+              <div>
+                <h2 className="text-base font-bold sm:text-lg md:text-2xl">Create a surprise</h2>
+                <p className="mt-0.5 hidden text-sm text-gray-600 md:mt-3 md:block">
+                  Personalize the names, photos, letter, and music, then share your link.
+                </p>
+              </div>
             </button>
           </div>
         </div>
@@ -336,7 +340,7 @@ export default function App() {
 
   if (sharedSurpriseState === 'loading') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-rose-50 p-6 text-center text-gray-700">
+      <main className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-gray-700">
         Loading your surprise...
       </main>
     );
@@ -344,9 +348,9 @@ export default function App() {
 
   if (sharedSurpriseState === 'not-found') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-rose-50 p-6 text-center text-gray-700">
+      <main className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-gray-700">
         <div>
-          <h1 className="font-serif text-4xl font-bold text-gray-800">Surprise not found</h1>
+          <h1 className="font-serif text-2xl font-bold leading-tight text-gray-800 sm:text-4xl">Surprise not found</h1>
           <p className="mt-3">This link may be invalid or the surprise is no longer available.</p>
         </div>
       </main>
@@ -355,9 +359,9 @@ export default function App() {
 
   if (sharedSurpriseState === 'error') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-rose-50 p-6 text-center text-gray-700">
+      <main className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-gray-700">
         <div>
-          <h1 className="font-serif text-4xl font-bold text-gray-800">Unable to load surprise</h1>
+          <h1 className="font-serif text-2xl font-bold leading-tight text-gray-800 sm:text-4xl">Unable to load surprise</h1>
           <p className="mt-3">Please check your connection and try opening the link again.</p>
         </div>
       </main>
@@ -365,7 +369,7 @@ export default function App() {
   }
 
   return (
-    <main className="relative min-h-screen w-full font-sans antialiased overflow-hidden select-none">
+    <main className="relative min-h-[100dvh] w-full overflow-x-clip font-sans antialiased select-none">
       {/* Background Floating Hearts Particle Ambiance (only for pastel scenes) */}
       {!isDarkScene && <FloatingHearts count={16} />}
 

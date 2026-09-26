@@ -51,15 +51,15 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4">
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="w-full max-w-md bg-white/95 rounded-3xl shadow-2xl border border-pink-200 overflow-hidden flex flex-col max-h-[85vh]"
+            className="flex h-[100dvh] max-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-pink-200 bg-white/95 shadow-2xl sm:h-auto sm:max-h-[85vh] sm:rounded-3xl sm:border"
           >
             {/* Header */}
-            <div className="px-6 py-4 border-b border-pink-100 flex items-center justify-between bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50">
+            <div className="flex shrink-0 items-center justify-between border-b border-pink-100 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50 px-4 py-3 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-6 sm:py-4">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-pink-500" />
                 <h3 className="font-serif text-xl font-bold text-gray-800">
@@ -68,14 +68,15 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
               </div>
               <button
                 onClick={onClose}
-                className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-pink-100 transition-colors"
+                aria-label="Close notes"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-pink-100 hover:text-gray-700"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Notes List */}
-            <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 custom-scrollbar sm:p-4">
               {notes.map((note) => (
                 <div
                   key={note.id}
@@ -100,13 +101,13 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
             </div>
 
             {/* Add note input */}
-            <form onSubmit={handleAddComment} className="p-4 border-t border-pink-100 bg-pink-50/40">
+            <form onSubmit={handleAddComment} className="shrink-0 border-t border-pink-100 bg-pink-50/40 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
               <input
                 type="text"
                 placeholder="Your name or nickname..."
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
-                className="w-full text-xs px-3 py-1.5 mb-2 rounded-lg bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800"
+                className="mb-2 min-h-11 w-full scroll-mt-4 rounded-lg border border-pink-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-pink-400 focus:outline-none"
               />
               <div className="flex gap-2">
                 <input
@@ -114,12 +115,12 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
                   placeholder={`Write a sweet birthday note for ${recipientName}...`}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1 text-sm px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800"
+                  className="min-h-11 min-w-0 flex-1 scroll-mt-4 rounded-xl border border-pink-200 bg-white px-3.5 py-2 text-sm text-gray-800 focus:border-pink-400 focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={!newComment.trim()}
-                  className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium shadow-md shadow-pink-500/20 hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 transition-all flex items-center justify-center"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2 font-medium text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-600 hover:to-rose-600 disabled:opacity-50"
                 >
                   <Send size={16} />
                 </button>

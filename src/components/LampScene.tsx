@@ -34,7 +34,7 @@ export const LampScene: React.FC<LampSceneProps> = ({ onComplete }) => {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-between p-6 overflow-hidden bg-gradient-to-b from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] select-none">
+    <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-between overflow-hidden bg-gradient-to-b from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] select-none sm:p-6">
       
       {/* Background Glow when lit */}
       <motion.div
@@ -44,7 +44,7 @@ export const LampScene: React.FC<LampSceneProps> = ({ onComplete }) => {
       />
 
       {/* Ceiling Wire & Hanging Cute Lamp */}
-      <div className="w-full flex flex-col items-center relative z-20 pt-2">
+      <div className="relative z-20 flex w-full flex-col items-center pt-1 sm:pt-2">
         {/* Top Wire */}
         <div className="w-0.5 h-16 sm:h-24 bg-gray-400/80 shadow-sm" />
 
@@ -140,14 +140,14 @@ export const LampScene: React.FC<LampSceneProps> = ({ onComplete }) => {
       </div>
 
       {/* Instruction Subtitle (Large, clear romantic typography) */}
-      <div className="relative z-20 text-center pb-12 sm:pb-16 max-w-md mx-auto">
+      <div className="relative z-20 mx-auto max-w-md pb-4 text-center sm:pb-16">
         <motion.div
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 backdrop-blur-md shadow-lg border border-pink-200"
+          className="inline-flex max-w-full items-center gap-2 rounded-full border border-pink-200 bg-white/80 px-4 py-2.5 shadow-lg backdrop-blur-md sm:px-6 sm:py-3"
         >
           <Sparkles className="w-5 h-5 text-pink-500 animate-spin" style={{ animationDuration: '6s' }} />
-          <span className="font-serif text-lg sm:text-xl font-semibold text-gray-800">
+          <span className="font-serif text-base font-semibold leading-snug text-gray-800 sm:text-xl">
             {isLit ? 'Lighting up your special day...' : 'Pull the string to turn on the light'}
           </span>
         </motion.div>

@@ -52,7 +52,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   };
 
   return (
-    <div className="fixed top-4 left-4 z-40 flex items-center gap-2">
+    <div className="fixed left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] z-40 flex items-center gap-2 sm:left-4 sm:top-4">
       <div
         className={`flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md transition-all shadow-md ${
           dark
@@ -64,7 +64,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         <button
           onClick={handleToggle}
           title={isPlaying ? 'Pause Music' : 'Play Music'}
-          className={`p-1.5 rounded-full transition-transform active:scale-95 ${
+          className={`flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-95 ${
             dark ? 'hover:bg-white/10 text-pink-300' : 'hover:bg-pink-100 text-pink-600'
           }`}
         >
@@ -117,7 +117,8 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
                   setIsPlaying(false);
                 }
               }}
-              className="text-pink-500 hover:text-pink-600"
+              aria-label={volume === 0 ? 'Turn music on' : 'Mute music'}
+              className="flex h-11 w-11 items-center justify-center text-pink-500 hover:text-pink-600"
             >
               {volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
@@ -137,7 +138,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   title="Upload Your Own Song (MP3)"
-                  className="p-1 text-pink-500 hover:text-pink-600 rounded"
+                  className="flex h-11 w-11 items-center justify-center rounded text-pink-500 hover:text-pink-600"
                 >
                   <Upload size={15} />
                 </button>

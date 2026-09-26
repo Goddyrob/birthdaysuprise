@@ -74,13 +74,13 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 overflow-hidden bg-gradient-to-br from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] select-none">
+    <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-start overflow-y-auto bg-gradient-to-br from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] px-3 pt-[max(4rem,calc(env(safe-area-inset-top)+3.5rem))] pb-[max(0.75rem,env(safe-area-inset-bottom))] select-none sm:justify-center sm:p-6 lg:p-8">
       
       {/* Background Soft Floating Glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-rose-200/40 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <div className="relative z-10 w-full max-w-2xl flex flex-col items-center text-center">
+      <div className="relative z-10 my-auto flex w-full max-w-2xl flex-col items-center py-3 text-center sm:py-0">
         
         {/* Title (Large typography) */}
         <motion.h1
@@ -88,13 +88,13 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-800 tracking-tight mb-2"
+          className="mb-1 font-serif text-2xl font-extrabold leading-tight text-gray-800 sm:mb-2 sm:text-4xl lg:text-5xl"
         >
           {isCut ? celebrationText : heading}
         </motion.h1>
 
         {/* Subtitle instructions */}
-        <p className="text-sm sm:text-base text-pink-700/80 font-medium mb-6">
+        <p className="mb-3 text-xs font-medium leading-5 text-pink-700/80 sm:mb-6 sm:text-base sm:leading-normal">
           {isCut ? 'Make a sweet wish! 🎂✨' : 'Drag your finger or mouse across the cake to slice'}
         </p>
 
@@ -108,7 +108,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
           onClick={() => {
             if (!isCut) triggerCutSuccess();
           }}
-          className={`relative w-72 sm:w-88 h-72 sm:h-88 flex items-center justify-center cursor-pointer transition-transform ${
+          className={`relative flex h-[min(18rem,calc(100vw-1.5rem))] w-[min(18rem,calc(100vw-1.5rem))] cursor-pointer items-center justify-center transition-transform sm:h-[22rem] sm:w-[22rem] ${
             !isCut ? 'hover:scale-[1.02] active:scale-[0.99]' : ''
           }`}
           style={{ touchAction: 'none' }}
@@ -237,7 +237,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
         </div>
 
         {/* Next Scene Button (Appears when sliced, matching reference video 00:10) */}
-        <div className="mt-8 h-14">
+        <div className="mt-4 h-14 sm:mt-8">
           <AnimatePresence>
             {isCut && (
               <motion.button

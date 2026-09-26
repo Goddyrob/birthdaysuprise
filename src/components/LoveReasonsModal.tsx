@@ -79,15 +79,15 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm select-none">
+      <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/60 backdrop-blur-sm select-none sm:items-center sm:p-4">
         <motion.div
           initial={{ scale: 0.92, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.92, opacity: 0, y: 20 }}
-          className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-pink-200 overflow-hidden flex flex-col max-h-[85vh]"
+          className="flex h-[100dvh] max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden border-pink-200 bg-white shadow-2xl sm:h-auto sm:max-h-[85vh] sm:rounded-3xl sm:border"
         >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-pink-100 flex items-center justify-between bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50">
+            <div className="flex shrink-0 items-center justify-between border-b border-pink-100 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50 px-4 py-3 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
               <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
@@ -96,17 +96,18 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-pink-100 transition-colors"
+              aria-label="Close love reasons"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-pink-100 hover:text-gray-700"
             >
               <X size={20} />
             </button>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-pink-100 bg-pink-50/40 px-6 gap-2 sm:gap-4">
+          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-pink-100 bg-pink-50/40 px-3 sm:gap-4 sm:px-6">
             <button
               onClick={() => setActiveTab('reasons')}
-              className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-2.5 text-xs font-semibold transition-all sm:px-3 sm:py-3 sm:text-sm ${
                 activeTab === 'reasons'
                   ? 'border-pink-500 text-pink-600 bg-white/60 rounded-t-lg'
                   : 'border-transparent text-gray-500 hover:text-pink-500'
@@ -117,7 +118,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
             </button>
             <button
               onClick={() => setActiveTab('quotes')}
-              className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-2.5 text-xs font-semibold transition-all sm:px-3 sm:py-3 sm:text-sm ${
                 activeTab === 'quotes'
                   ? 'border-pink-500 text-pink-600 bg-white/60 rounded-t-lg'
                   : 'border-transparent text-gray-500 hover:text-pink-500'
@@ -128,7 +129,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
             </button>
             <button
               onClick={() => setActiveTab('meter')}
-              className={`py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-2.5 text-xs font-semibold transition-all sm:px-3 sm:py-3 sm:text-sm ${
                 activeTab === 'meter'
                   ? 'border-pink-500 text-pink-600 bg-white/60 rounded-t-lg'
                   : 'border-transparent text-gray-500 hover:text-pink-500'
@@ -140,7 +141,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
           </div>
 
           {/* Body */}
-          <div className="p-6 overflow-y-auto flex-1 space-y-4 custom-scrollbar">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 custom-scrollbar sm:p-6">
             {/* TAB 1: REASONS */}
             {activeTab === 'reasons' && (
               <div className="space-y-3">
@@ -240,7 +241,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-pink-100 bg-pink-50/40 text-center">
+          <div className="shrink-0 border-t border-pink-100 bg-pink-50/40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center sm:px-6">
             <p className="font-script text-lg text-pink-600 font-semibold">
               Forever and always with you ❤️
             </p>

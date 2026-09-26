@@ -76,7 +76,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
-      className="relative min-h-screen w-full overflow-hidden bg-[#06070e] text-white flex flex-col justify-between select-none"
+      className="relative flex h-[100dvh] min-h-[100dvh] w-full flex-col justify-between overflow-hidden bg-[#06070e] pb-[env(safe-area-inset-bottom)] text-white select-none"
     >
       {/* Background Cosmic Starfield */}
       <div className="absolute inset-0 pointer-events-none">
@@ -97,12 +97,12 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
         ))}
 
         {/* Ambient Nebula Glows */}
-        <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-pink-900/15 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/3 right-1/4 w-[450px] h-[450px] bg-purple-900/15 rounded-full blur-[120px]" />
+        <div className="absolute left-1/3 top-1/4 hidden h-[500px] w-[500px] rounded-full bg-pink-900/15 blur-[120px] sm:block" />
+        <div className="absolute bottom-1/3 right-1/4 hidden h-[450px] w-[450px] rounded-full bg-purple-900/15 blur-[120px] sm:block" />
       </div>
 
       {/* Floating Header Banner */}
-      <header className="relative z-20 pt-16 sm:pt-6 px-4 sm:px-6 text-center">
+      <header className="relative z-20 px-3 pt-[calc(env(safe-area-inset-top)+5.5rem)] text-center sm:px-6 sm:pt-24">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -119,8 +119,8 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
       </header>
 
       {/* Responsive editorial memory gallery */}
-      <div className="relative z-10 mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-4 py-6 sm:px-8 lg:px-12">
-        <div className="grid auto-rows-[150px] grid-cols-2 gap-3 sm:auto-rows-[190px] sm:gap-5 md:grid-cols-4 md:auto-rows-[180px] lg:auto-rows-[210px]">
+      <div className="relative z-10 mx-auto min-h-0 w-full max-w-6xl flex-1 overflow-y-auto px-3 py-4 sm:px-8 sm:py-6 lg:px-12">
+        <div className="grid auto-rows-[132px] grid-cols-2 gap-2.5 sm:auto-rows-[190px] sm:gap-5 md:grid-cols-4 md:auto-rows-[180px] lg:auto-rows-[210px]">
           {photos.map((photo, index) => (
             <motion.button
               key={photo.id || index}
@@ -149,13 +149,13 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
       </div>
 
       {/* Floating Bottom Control Bar */}
-      <footer className="relative z-30 pb-6 px-4 flex items-center justify-center gap-3 sm:gap-4">
+      <footer className="relative z-30 flex flex-wrap items-center justify-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:gap-4 sm:px-4 sm:pb-6">
         {/* Replay Experience Button */}
         {!isRecipientMode && <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onReplay}
-          className="px-5 sm:px-6 py-2.5 sm:py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 rounded-full text-xs sm:text-sm font-semibold text-white shadow-lg flex items-center gap-2 transition-colors cursor-pointer"
+          className="flex min-h-11 items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-2.5 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20 sm:px-6 sm:py-3 sm:text-sm"
         >
           <RotateCcw size={16} className="text-pink-400" />
           <span>Replay Journey</span>
@@ -166,7 +166,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => fileInputRef.current?.click()}
-          className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 rounded-full text-xs sm:text-sm font-semibold text-white shadow-lg shadow-pink-500/30 flex items-center gap-2 transition-all cursor-pointer"
+          className="flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-2.5 text-xs font-semibold text-white shadow-lg shadow-pink-500/30 transition-all hover:from-pink-600 hover:to-rose-600 sm:px-6 sm:py-3 sm:text-sm"
         >
           <Plus size={16} />
           <span>Add Photos</span>
@@ -192,7 +192,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onOpenLoveReasons}
-            className="px-4 sm:px-5 py-2.5 sm:py-3 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 rounded-full text-xs sm:text-sm font-semibold text-rose-200 shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+            className="flex min-h-11 items-center gap-2 rounded-full border border-rose-400/40 bg-rose-500/20 px-3 py-2.5 text-xs font-semibold text-rose-200 shadow-lg transition-all hover:bg-rose-500/30 sm:px-5 sm:py-3 sm:text-sm"
           >
             <Heart size={16} className="text-pink-400 fill-pink-400" />
             <span>Love Reasons</span>
@@ -212,12 +212,12 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
       </footer>
 
       {isRecipientMode && onCreateOwn && (
-        <section className="relative z-30 border-t border-white/10 bg-black/25 px-5 py-8 text-center safe-area-bottom">
+        <section className="safe-area-bottom relative z-30 border-t border-white/10 bg-black/25 px-4 py-5 text-center sm:px-5 sm:py-8">
           <p className="font-serif text-xl text-pink-100">Loved this surprise?</p>
           <button
             type="button"
             onClick={onCreateOwn}
-            className="mt-3 rounded-full border border-pink-300/50 bg-pink-500/20 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-pink-500/35"
+            className="mt-3 min-h-11 rounded-full border border-pink-300/50 bg-pink-500/20 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-pink-500/35"
           >
             Create Your Own Surprise
           </button>
