@@ -253,24 +253,21 @@ server/
 
 ---
 
-## 🌍 Production Deployment
+## 🌍 Vercel Deployment
 
-Production share links use:
+The Vercel deployment builds the Vite frontend from `npm run build` and serves it from `dist`. The serverless function in `api/[...path].js` exports the same Express API app used by the local server. `vercel.json` sends `/surprise/<uuid>` to the SPA while leaving `/api/*` to the API function.
 
-```text
-/surprise/<uuid>
-```
+In **Vercel → Project → Settings → Environment Variables**, configure:
 
-The production host should:
+| Name | Value source |
+| --- | --- |
+| `SUPABASE_URL` | Project URL from Supabase project settings. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side service role/secret key from Supabase API settings. Never use a `VITE_` prefix. |
+| `SUPABASE_STORAGE_BUCKET` | The private storage bucket name; defaults to `surprise-media`. |
 
-- Serve the built React application
-- Route `/surprise/*` back to `dist/index.html`
-- Route `/api/*` to the Express server
-- Keep Supabase service credentials server-side
-- Support secure HTTPS connections
-- Preserve SPA routing for direct shared links
+Apply the variables to the required Vercel environments, then redeploy so the deployment receives them. `PORT` is only used by the local Express server and is not required on Vercel.
 
-A static-only host is not enough unless the API is deployed separately with compatible endpoints.
+Production share links use `/surprise/<uuid>`. API endpoints remain under `/api/`.
 
 ---
 
