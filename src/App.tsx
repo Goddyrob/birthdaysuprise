@@ -4,6 +4,7 @@ import { Gift, Settings } from 'lucide-react';
 import { DEFAULT_CONFIG } from './data/defaultData';
 import { AppConfig, SceneType, ShareResult } from './types';
 import { musicPlayer } from './utils/audio';
+import { prepareConfigForShare } from './utils/shareMedia';
 
 import { FloatingHearts } from './components/FloatingHearts';
 import { MusicPlayer } from './components/MusicPlayer';
@@ -173,16 +174,20 @@ export default function App() {
   };
 
   const handleShareCurrentConfig = async (configToShare = config): Promise<ShareResult> => {
+    const preparedConfig = await prepareConfigForShare(configToShare);
+    const body = JSON.stringify({ config: preparedConfig });
     const response = await fetch('/api/surprises', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config: configToShare }),
+      body,
     });
 
     if (!response.ok) {
       const result = await response.json().catch(() => ({}));
       const error = new Error(result.error || 'Unable to create shareable surprise');
-      error.name = result.code === 'MEDIA_UPLOAD_FAILED' ? 'MediaUploadError' : 'SurpriseSaveError';
+      error.name = response.status === 413
+        ? 'PayloadTooLargeError'
+        : result.code === 'MEDIA_UPLOAD_FAILED' ? 'MediaUploadError' : 'SurpriseSaveError';
       throw error;
     }
 

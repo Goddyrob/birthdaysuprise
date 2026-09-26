@@ -167,6 +167,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     } catch (error) {
       if (error instanceof Error && error.name === 'MediaUploadError') {
         setShareError('Your image could not be uploaded. Please choose it again and retry.');
+      } else if (error instanceof Error && error.name === 'PayloadTooLargeError') {
+        setShareError('These photos or your audio are too large to send together. Choose fewer or smaller files, then retry.');
       } else {
         setShareError('Your surprise could not be created. Please retry.');
       }
@@ -240,7 +242,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {isSharing ? 'Creating link' : shareCopied ? 'Link copied' : shareUrl ? 'Link ready' : ''}
               </div>
             )}
-            {shareError && <p className="text-right text-xs font-medium text-rose-600" role="alert">{shareError}</p>}
             {shareUrl && (
               <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/60 p-3">
                 <p className="text-sm font-semibold text-pink-800">Your surprise is ready!</p>
@@ -575,6 +576,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* Bottom Actions */}
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-pink-100 bg-pink-50/40 px-3 py-2.5 sm:flex-nowrap sm:px-6 sm:py-4">
+            {shareError && <p className="order-first basis-full text-center text-xs font-medium text-rose-600" role="alert">{shareError}</p>}
             {onShareCurrentConfig && (
               <button
                 onClick={handleShare}
