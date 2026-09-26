@@ -1,129 +1,394 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:ff758c,100:ffb199&height=190&section=header&text=Amour&fontSize=76&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=A%20cinematic%20love%20experience%20made%20with%20React&descAlignY=62&descSize=18" alt="Amour banner" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:F97316,100:111827&height=210&section=header&text=Amour&fontSize=78&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=A%20cinematic%20love%20experience%20built%20with%20React&descAlignY=62&descSize=18" alt="Amour banner" width="100%" />
 
 <br />
 
-<a href="https://github.com/"><img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" /></a>
+<a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" /></a>
+<a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
 <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-6-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 6" /></a>
-<a href="https://motion.dev/"><img src="https://img.shields.io/badge/Motion-animated-111111?style=for-the-badge&logo=framer&logoColor=white" alt="Motion" /></a>
-<a href="https://www.instagram.com/hack.n.code/"><img src="https://img.shields.io/badge/Instagram-@hack.n.code-E4405F?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram hack.n.code" /></a>
+<a href="https://motion.dev/"><img src="https://img.shields.io/badge/Motion-Animated-111111?style=for-the-badge&logo=framer&logoColor=white" alt="Motion" /></a>
+<a href="https://supabase.com/"><img src="https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" /></a>
 
 <br /><br />
 
-<img src="https://readme-typing-svg.demolab.com?font=Playfair+Display&size=25&duration=3000&pause=900&color=E75480&center=true&vCenter=true&width=650&lines=Unlock+the+memory.;Light+the+moment.;Cut+the+cake.;Read+the+letter.;Float+through+your+memories." alt="Animated feature list" />
+<a href="https://github.com/Goddyrob"><img src="https://img.shields.io/badge/GitHub-@Goddyrob-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Goddyrob" /></a>
+<a href="https://www.linkedin.com/in/godswill-robwet"><img src="https://img.shields.io/badge/LinkedIn-Godswill%20Robwet-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn Godswill Robwet" /></a>
+<a href="https://godswillrobwet.netlify.app"><img src="https://img.shields.io/badge/Portfolio-Godswill%20Robwet-F97316?style=for-the-badge&logo=netlify&logoColor=white" alt="Godswill Robwet Portfolio" /></a>
+<a href="mailto:godswillrobwet@gmail.com"><img src="https://img.shields.io/badge/Email-Let's%20Connect-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Email Godswill Robwet" /></a>
 
-<h2>Hi, welcome to Amour 💌</h2>
+<br /><br />
+
+<img src="https://readme-typing-svg.demolab.com?font=Playfair+Display&size=25&duration=3000&pause=900&color=F97316&center=true&vCenter=true&width=760&lines=Unlock+the+memory.;Light+the+moment.;Cut+the+cake.;Read+the+letter.;Float+through+your+memories." alt="Animated feature list" />
+
+<h2>Welcome to Amour 💌</h2>
+
+<p><strong>A private, cinematic and deeply personal digital experience created to turn meaningful memories into an interactive story.</strong></p>
 
 </div>
 
-## A little universe, made for one person
+---
 
-**Amour** turns a birthday message into an interactive story. A private passcode opens a sequence of soft transitions, a glowing lamp, a cake-cutting moment, a handwritten-style letter, and a floating photo galaxy where memories drift through space.
+## ✨ About Amour
+
+**Amour** transforms a birthday or special message into an immersive digital journey.
+
+Instead of opening a simple greeting card, the recipient unlocks a sequence of interactive scenes — soft transitions, a glowing lamp, a cake-cutting moment, a handwritten-style letter and a floating photo galaxy filled with personal memories.
 
 <div align="center">
 
-`unlock`  →  `illuminate`  →  `celebrate`  →  `read`  →  `remember`
+`unlock` → `illuminate` → `celebrate` → `read` → `remember`
 
 </div>
 
-### ✨ The experience
+The project combines **storytelling, animation, personalization and secure private content delivery** into one memorable experience.
 
-| Scene | What happens |
+---
+
+## 🎬 The Experience
+
+| Scene | Experience |
 | --- | --- |
-| **Passcode landing** | Unlock the experience with a personal code and a featured photo. |
-| **Floral transition** | Move between chapters through a blooming animated transition. |
-| **Lamp scene** | Pull the cord and bring the next moment to life. |
-| **Birthday cake** | Swipe to cut the cake and trigger the celebration. |
-| **Love letter** | Reveal a customizable letter, one line at a time. |
-| **Photo galaxy** | Explore uploaded memories in a cinematic 3D-style space gallery. |
+| 🔐 **Passcode Landing** | Unlock the experience using a private personal code and featured image. |
+| 🌸 **Floral Transition** | Move between chapters through a soft animated transition. |
+| 💡 **Lamp Scene** | Pull the cord and illuminate the next part of the story. |
+| 🎂 **Birthday Cake** | Swipe across the cake to trigger the celebration moment. |
+| 💌 **Love Letter** | Reveal a customizable personal letter in an intimate reading experience. |
+| 🌌 **Photo Galaxy** | Explore uploaded memories in a cinematic floating gallery. |
+| 🎵 **Music Experience** | Add a personal soundtrack to make the experience even more immersive. |
+| ❤️ **Love Notes** | Include personal notes and meaningful reasons that make the experience unique. |
 
-### 💌 Personalize everything
+---
 
-- Change the recipient and sender names.
-- Rewrite the greeting, letter, closing, cake message, and polaroid text.
-- Upload a main photo and as many gallery memories as you like.
-- Add your own music and set its title.
-- Open love notes and the “reasons I love you” experience.
-- Reset the experience or clear gallery photos whenever you need.
+## 💖 Personalize the Entire Story
 
-Creator configuration is saved through the Express API into Supabase. The experience configuration is stored as JSONB, passcodes are stored only as bcrypt hashes, and uploaded images or audio are stored in a private Supabase Storage bucket. The recipient receives only safe metadata until the server verifies the passcode.
+Amour is designed so that each experience can feel completely personal.
 
-## Run it locally
+You can:
 
-**Requirements:** Node.js 18+
+- Change the **recipient and sender names**
+- Customize the **welcome message, cake message, letter and closing**
+- Upload a **featured photo**
+- Add multiple **gallery memories**
+- Upload custom **background music**
+- Set a music title
+- Create personal **love notes**
+- Add **reasons I love you**
+- Customize polaroid captions and memory text
+- Reset or update the experience when needed
 
-### 1. Install and start
+The goal is simple: **the technology should disappear, and the memory should become the experience.**
+
+---
+
+## 🔐 Privacy & Security
+
+Personal memories deserve more than a beautiful interface — they deserve thoughtful protection.
+
+Amour uses a server-backed architecture where:
+
+- Creator configuration is stored through the **Express API**
+- Experience data is stored in **Supabase**
+- Configuration is saved as structured **JSONB**
+- Passcodes are stored only as **bcrypt hashes**
+- Uploaded images and audio are kept in a **private Supabase Storage bucket**
+- The browser never receives the **Supabase service-role key**
+- Protected media is delivered through **short-lived signed URLs**
+- Public metadata can be loaded before unlock without exposing private experience content
+- The full protected configuration is returned only after successful passcode verification
+
+> **Privacy by design:** the recipient receives only what is needed at each stage of the experience.
+
+---
+
+## 🏗️ Architecture
+
+```text
+                        ┌─────────────────────┐
+                        │      Recipient      │
+                        │   Browser / Mobile  │
+                        └──────────┬──────────┘
+                                   │
+                                   ▼
+                        ┌─────────────────────┐
+                        │    React + Vite     │
+                        │ Interactive Scenes  │
+                        └──────────┬──────────┘
+                                   │
+                            /api/* │
+                                   ▼
+                        ┌─────────────────────┐
+                        │    Express API      │
+                        │ Auth + Validation   │
+                        └──────────┬──────────┘
+                                   │
+                      ┌────────────┴────────────┐
+                      ▼                         ▼
+             ┌────────────────┐       ┌──────────────────┐
+             │ Supabase DB    │       │ Supabase Storage │
+             │ Config + Meta  │       │ Images + Audio   │
+             └────────────────┘       └──────────────────┘
+```
+
+---
+
+## 🧰 Built With
+
+`React` · `TypeScript` · `Vite` · `Motion` · `Tailwind CSS` · `Lucide React` · `canvas-confetti` · `Express` · `Supabase` · `bcrypt`
+
+---
+
+## 🚀 Run Locally
+
+### Requirements
+
+- **Node.js 18+**
+- A Supabase project for persistent creator experiences
+
+### 1. Clone the project
+
+```bash
+git clone https://github.com/Goddyrob/<repository-name>.git
+cd <repository-name>
+```
+
+### 2. Install dependencies
 
 ```bash
 npm install
+```
+
+### 3. Configure environment variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Then configure the required server-side variables:
+
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+> Never expose `SUPABASE_SERVICE_ROLE_KEY` in client-side code.
+
+### 4. Configure Supabase
+
+1. Create a Supabase project.
+2. Open the SQL Editor.
+3. Run `supabase/schema.sql`.
+4. Confirm the required database objects and private storage bucket have been created.
+
+### 5. Start development
+
+```bash
 npm run dev
 ```
 
-### 2. Open the website
+Open `http://localhost:3000`.
 
-Visit [http://localhost:3000](http://localhost:3000) in a modern browser. The development command starts Vite and the Express API together.
+---
 
-### 3. Try the demo
+## 🧪 Demo Flow
 
-The default demo passcode is `1234`. A created surprise requires the passcode configured by its creator. After unlocking, follow the experience in order: pull the lamp cord, swipe across the cake to cut it, read the letter, and explore the floating photo gallery.
+The default demo passcode is:
 
-> Audio playback may require one click or tap because browsers block autoplay until the user interacts with the page.
-
-### Available commands
-
-```bash
-npm run dev      # Start the Vite development server
-npm run build    # Create a production build
-npm run preview  # Preview the production build locally
-npm run lint     # Run the TypeScript check
+```text
+1234
 ```
 
-## Supabase setup
+For creator-generated surprises, use the passcode configured when the experience was created.
 
-1. Create a Supabase project.
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL Editor.
-3. Copy [`.env.example`](.env.example) to `.env` for local development.
-4. Set `SUPABASE_URL` and the server-only `SUPABASE_SERVICE_ROLE_KEY`.
-5. Deploy the built frontend and Express server together, or configure a host that supports both a Vite build and a long-running Node process.
+After unlocking:
 
-The browser never receives the service-role key and never queries Supabase directly. `GET /api/surprises/:id` returns metadata only; `POST /api/surprises/:id/unlock` verifies the submitted passcode and returns the protected configuration with short-lived signed media URLs.
+1. Pull the lamp cord
+2. Continue into the celebration
+3. Swipe across the cake
+4. Read the personal letter
+5. Explore the floating memory gallery
 
-Production share links use `/surprise/<uuid>`. The host must route that path to `dist/index.html` and route `/api/*` to the Express server. Do not use a static-only deployment unless its API functions are separately configured to provide the same endpoints.
+> Browsers may require a click or tap before audio can play because autoplay is commonly restricted.
 
-## Project map
+---
+
+## 📜 Available Commands
+
+```bash
+npm run dev      # Start Vite + Express development environment
+npm run build    # Create the production frontend build
+npm run preview  # Preview the production build locally
+npm run lint     # Run project checks
+```
+
+---
+
+## 🗂️ Project Structure
 
 ```text
 src/
-├── App.tsx                    # Scene router and saved configuration
+├── App.tsx                     # Scene routing and experience state
 ├── components/
-│   ├── LandingScene.tsx       # Passcode entry and first impression
-│   ├── LampScene.tsx          # Pull-cord interaction
-│   ├── CakeScene.tsx          # Swipe-to-cut celebration
-│   ├── LetterScene.tsx         # Animated love letter
-│   ├── SpaceGalleryScene.tsx  # Floating memory gallery
-│   └── ...                    # Music, modals, hearts, transitions
-├── data/defaultData.ts        # Starter romantic content
-├── types/index.ts             # Shared TypeScript models
-└── utils/audio.ts             # Music playback helpers
+│   ├── LandingScene.tsx        # Passcode entry and first impression
+│   ├── LampScene.tsx           # Pull-cord interaction
+│   ├── CakeScene.tsx           # Swipe-to-cut celebration
+│   ├── LetterScene.tsx         # Animated personal letter
+│   ├── SpaceGalleryScene.tsx   # Floating memory gallery
+│   └── ...                     # Music, modals, hearts and transitions
+├── data/
+│   └── defaultData.ts          # Starter romantic content
+├── types/
+│   └── index.ts                # Shared TypeScript models
+└── utils/
+    └── audio.ts                # Music playback helpers
+
+supabase/
+└── schema.sql                  # Database setup
+
+server/
+└── ...                         # Express API and protected data access
 ```
 
-## Make it yours
+---
 
-The quickest starting point is [`src/data/defaultData.ts`](src/data/defaultData.ts). For a deeper customization flow, launch the app and use the settings button in the experience itself. Replace the sample Unsplash photos with your own memories before sharing the final link.
+## 🌍 Production Deployment
 
-## Built with
+Production share links use:
 
-`React` · `TypeScript` · `Vite` · `Motion` · `Tailwind CSS` · `Lucide React` · `canvas-confetti`
+```text
+/surprise/<uuid>
+```
+
+The production host should:
+
+- Serve the built React application
+- Route `/surprise/*` back to `dist/index.html`
+- Route `/api/*` to the Express server
+- Keep Supabase service credentials server-side
+- Support secure HTTPS connections
+- Preserve SPA routing for direct shared links
+
+A static-only host is not enough unless the API is deployed separately with compatible endpoints.
+
+---
+
+## 🔌 API Behaviour
+
+### Public metadata
+
+```http
+GET /api/surprises/:id
+```
+
+Returns safe public metadata without exposing protected personal content.
+
+### Unlock experience
+
+```http
+POST /api/surprises/:id/unlock
+```
+
+Verifies the submitted passcode and, when valid, returns the protected experience configuration together with temporary signed URLs for private media.
+
+---
+
+## 🎨 Design Philosophy
+
+**Emotion before complexity.**  
+Every animation should strengthen the story rather than distract from it.
+
+**Privacy before convenience.**  
+Personal memories should not be publicly exposed just because a link exists.
+
+**Personalization before templates.**  
+The recipient should feel that the experience was created specifically for them.
+
+**Performance before decoration.**  
+Transitions, media and interactions should remain smooth across modern mobile and desktop devices.
+
+---
+
+## 🛣️ Future Enhancements
+
+- More cinematic scene themes
+- Anniversary and graduation experience templates
+- Creator dashboard improvements
+- Scheduled surprise activation
+- Expiring private share links
+- Additional gallery layouts
+- Optional video memories
+- Custom theme presets
+- Improved accessibility controls
+- Downloadable keepsake mode
+- Event-specific templates beyond birthdays
+
+---
+
+## 👨‍💻 Creator
 
 <div align="center">
 
+### **Godswill Robwet**
+
+**Digital Solutions Consultant & Tech Educator**
+
+*Turning ideas into digital impact.*
+
 <br />
 
-<a href="https://www.instagram.com/hack.n.code/"><strong>Follow more builds at @hack.n.code on Instagram →</strong></a>
+<a href="https://godswillrobwet.netlify.app">Portfolio</a>
+&nbsp; • &nbsp;
+<a href="https://github.com/Goddyrob">GitHub</a>
+&nbsp; • &nbsp;
+<a href="https://www.linkedin.com/in/godswill-robwet">LinkedIn</a>
+&nbsp; • &nbsp;
+<a href="mailto:godswillrobwet@gmail.com">Email</a>
 
 <br /><br />
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:ffb199,100:ff758c&height=100&section=footer&animation=fadeIn" alt="Amour footer" width="100%" />
+**Web & App Development · Branding · Data · Digital Solutions**
+
+</div>
+
+---
+
+## 🤝 Contributing
+
+Ideas, improvements and thoughtful contributions are welcome.
+
+```bash
+git checkout -b feature/your-feature
+git commit -m "Add: your feature"
+git push origin feature/your-feature
+```
+
+Then open a pull request describing the improvement.
+
+---
+
+## 📄 License
+
+Add the appropriate license for how you want Amour to be reused or distributed.
+
+For a private/personal project, you may choose to keep the source proprietary.  
+For an open-source release, add a `LICENSE` file and state the selected license here.
+
+---
+
+<div align="center">
+
+### Built with intention. Designed around memories. 💌
+
+**Godswill Robwet — Turning ideas into digital impact.**
+
+<br />
+
+<a href="https://godswillrobwet.netlify.app"><strong>Explore my portfolio →</strong></a>
+
+<br /><br />
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:111827,100:F97316&height=110&section=footer&animation=fadeIn" alt="Amour footer" width="100%" />
 
 </div>
