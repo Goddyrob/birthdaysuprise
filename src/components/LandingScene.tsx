@@ -47,6 +47,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
   const [errorShake, setErrorShake] = useState(false);
   const [unlockError, setUnlockError] = useState('');
   const [mainPhotoLoaded, setMainPhotoLoaded] = useState(false);
+  const [fallbackImageFailed, setFallbackImageFailed] = useState(false);
   const [pendingSuccess, setPendingSuccess] = useState(false);
   const [floatingHearts, setFloatingHearts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [imageFailed, setImageFailed] = useState(false);
@@ -55,6 +56,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
 
   useEffect(() => {
     setImageFailed(false);
+    setFallbackImageFailed(false);
     setMainPhotoLoaded(false);
   }, [mainPhoto]);
 
@@ -68,6 +70,9 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
   }, [mainPhoto, mainPhotoLoaded, onSuccess, onUnlock, pendingSuccess]);
 
   const expectedLength = passcodeLength || passcode.length || 4;
+  const displayedPhoto = imageFailed
+    ? fallbackImageFailed ? null : defaultSurpriseImage
+    : mainPhoto || defaultSurpriseImage;
 
   const handleDigitPress = (digit: string) => {
     playKeySound();
@@ -169,14 +174,22 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
         transition={{ duration: 0.8, ease: 'easeOut' }}
         className="relative z-10 my-auto w-full max-w-5xl rounded-[1.5rem] border border-white/80 bg-white/75 p-2 shadow-[0_20px_60px_-15px_rgba(236,72,153,0.15)] backdrop-blur-xl min-[360px]:p-3 sm:rounded-[2.5rem] sm:p-8 lg:p-14"
       >
-        <div className="grid grid-cols-1 items-center gap-2 max-[359px]:grid-cols-[minmax(0,0.95fr)_minmax(8.5rem,1.05fr)] min-[360px]:grid-cols-2 min-[360px]:gap-3 sm:gap-8 lg:grid-cols-12 lg:gap-12">
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-2 text-center font-serif text-xl font-bold leading-tight text-gray-800 md:hidden"
+        >
+          Enter Passcode
+        </motion.h1>
+
+        <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-2 md:gap-8 lg:grid-cols-12 lg:gap-12">
           
           {/* LEFT SIDE: Large Polaroid Photo with Pink Ribbon */}
           <div className="col-span-1 flex flex-col items-center justify-center min-[360px]:col-span-1 lg:col-span-6">
             <motion.div
               whileHover={{ rotate: 1, scale: 1.02 }}
               transition={{ type: 'spring', stiffness: 300 }}
-              className="group relative w-full max-w-[340px] rotate-[-1.5deg] rounded-xl border border-pink-100/80 bg-white p-2 pb-3 shadow-xl transition-transform max-[359px]:max-w-none max-[359px]:p-1.5 max-[359px]:pb-2 sm:max-w-[380px] sm:rounded-2xl sm:p-4 sm:pb-7 sm:shadow-2xl"
+              className="group relative w-[min(10rem,calc(100vw-3.5rem))] rotate-[-1.5deg] rounded-xl border border-pink-100/80 bg-white p-2 pb-3 shadow-xl transition-transform md:w-full md:max-w-[340px] sm:rounded-2xl sm:p-4 sm:pb-7 sm:shadow-2xl lg:max-w-[380px]"
             >
               {/* Decorative Pink Ribbon/Bow graphic top-left (Matching Reference Video) */}
               <div className="pointer-events-none absolute -left-2 -top-2 z-20 h-10 w-10 select-none drop-shadow-md sm:-left-4 sm:-top-4 sm:h-16 sm:w-16">
@@ -198,22 +211,19 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
               </div>
 
               {/* Polaroid Image Area */}
-              <div className="relative aspect-[4/4.5] w-full overflow-hidden rounded-lg bg-pink-50 shadow-inner">
-                {isLocked && !mainPhoto ? (
-                  <div className="h-full w-full bg-gradient-to-br from-pink-200 via-rose-100 to-amber-100" aria-label="Locked surprise" />
-                ) : mainPhoto && !imageFailed ? (
+              <div className="relative aspect-[4/4.5] w-full overflow-hidden rounded-lg bg-gradient-to-br from-pink-200 via-rose-100 to-amber-100 shadow-inner">
+                {displayedPhoto && (
                   <img
-                    src={mainPhoto}
+                    src={displayedPhoto}
                     alt="Birthday Memory"
                     onLoad={() => setMainPhotoLoaded(true)}
                     onError={() => {
-                      setImageFailed(true);
                       setMainPhotoLoaded(true);
+                      if (displayedPhoto === defaultSurpriseImage) setFallbackImageFailed(true);
+                      setImageFailed(true);
                     }}
-                    className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-105"
+                    className="absolute inset-0 h-full w-full rounded-lg object-cover object-center select-none transition-transform duration-500 group-hover:scale-105"
                   />
-                ) : (
-                  <img src={defaultSurpriseImage} alt="A romantic birthday memory" className="h-full w-full object-cover" />
                 )}
 
                 {/* Upload Button Overlay */}
@@ -260,12 +270,12 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
           </div>
 
           {/* CENTER-RIGHT SIDE: Large Passcode Input & Keypad */}
-          <div className="col-span-1 flex flex-col items-center text-center min-[360px]:col-span-1 lg:col-span-5">
+          <div className="col-span-1 flex flex-col items-center text-center md:col-span-1 lg:col-span-5">
             {/* Heading (Large typography matching instructions) */}
             <motion.h1
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="font-serif text-xl font-bold leading-tight text-gray-800 sm:text-4xl lg:text-5xl"
+              className="hidden font-serif text-xl font-bold leading-tight text-gray-800 sm:text-4xl lg:text-5xl md:block"
             >
               Enter Passcode
             </motion.h1>

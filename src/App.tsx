@@ -43,11 +43,11 @@ const buildShareableUrl = (id: unknown) => {
   return new URL(`/surprise/${id}`, window.location.origin).toString();
 };
 
-const createLockedConfig = (recipientName: string, senderName: string): AppConfig => ({
+const createLockedConfig = (recipientName: string, senderName: string, previewPhoto: string): AppConfig => ({
   ...DEFAULT_CONFIG,
   recipientName,
   senderName,
-  mainPhoto: '',
+  mainPhoto: previewPhoto || '/default-surprise.svg',
   polaroidText: '',
   passcode: '',
   cakeHeading: '',
@@ -104,6 +104,7 @@ export default function App() {
           setConfig(createLockedConfig(
             result.recipientName || 'Your surprise',
             result.senderName || 'Someone special',
+            result.previewPhoto,
           ));
           setSharedPasscodeLength(result.passcodeLength || 4);
           setSharedSurpriseState('locked');

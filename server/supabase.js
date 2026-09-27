@@ -268,13 +268,15 @@ export const getSurpriseMetadata = async (id) => {
   assertSupabase();
   const { data, error } = await supabase
     .from('surprises')
-    .select('id, recipient_name, sender_name, passcode_length, created_at')
+    .select('id, recipient_name, sender_name, passcode_length, created_at, preview_photo:configuration->>mainPhoto')
     .eq('id', id)
     .maybeSingle();
   if (error) {
     error.statusCode = 502;
     throw error;
   }
+  if (!data) return data;
+  data.preview_photo = await resolveMedia(data.preview_photo || '/default-surprise.svg');
   return data;
 };
 

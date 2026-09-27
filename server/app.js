@@ -57,6 +57,7 @@ app.get('/api/surprises/:id', async (req, res) => {
       senderName: surprise.sender_name,
       createdAt: surprise.created_at,
       passcodeLength: surprise.passcode_length,
+      previewPhoto: surprise.preview_photo,
     });
   } catch (error) {
     console.error('Get surprise metadata failed:', error.message);
