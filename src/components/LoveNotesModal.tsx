@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Send, Heart, MessageCircle } from 'lucide-react';
+import { useModalAccessibility } from '../utils/useModalAccessibility';
 
 interface LoveNotesModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
   const [notes, setNotes] = useState<Note[]>(INITIAL_NOTES);
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
+  const dialogRef = useModalAccessibility(isOpen, onClose);
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,16 +55,20 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4">
           <motion.div
+            ref={dialogRef}
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="flex h-[100dvh] max-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-pink-200 bg-white/95 shadow-2xl sm:h-auto sm:max-h-[85vh] sm:rounded-3xl sm:border"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notes-title"
           >
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-pink-100 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50 px-4 py-3 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-6 sm:py-4">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-pink-500" />
-                <h3 className="font-serif text-xl font-bold text-gray-800">
+                <h3 id="notes-title" className="font-serif text-xl font-bold text-gray-800">
                   Sweet notes & wishes
                 </h3>
               </div>
@@ -104,6 +110,7 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
             <form onSubmit={handleAddComment} className="shrink-0 border-t border-pink-100 bg-pink-50/40 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
               <input
                 type="text"
+                aria-label="Your name or nickname"
                 placeholder="Your name or nickname..."
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
@@ -112,6 +119,7 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
               <div className="flex gap-2">
                 <input
                   type="text"
+                  aria-label={`Write a sweet birthday note for ${recipientName}`}
                   placeholder={`Write a sweet birthday note for ${recipientName}...`}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}

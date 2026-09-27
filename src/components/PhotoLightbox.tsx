@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Download, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PhotoItem } from '../types';
+import { useModalAccessibility } from '../utils/useModalAccessibility';
 
 interface PhotoLightboxProps {
   photo: PhotoItem | null;
@@ -13,15 +14,20 @@ interface PhotoLightboxProps {
 }
 
 export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photo, onClose, photos = [], photoIndex = 0, onPrevious, onNext }) => {
+  const dialogRef = useModalAccessibility(Boolean(photo), onClose);
+  const [imageFailure, setImageFailure] = useState<'primary' | 'fallback' | null>(null);
+
+  useEffect(() => setImageFailure(null), [photo?.url]);
+
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+    if (!photo) return;
+    const handleArrowKeys = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft') onPrevious?.();
       if (event.key === 'ArrowRight') onNext?.();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, onNext, onPrevious]);
+    window.addEventListener('keydown', handleArrowKeys);
+    return () => window.removeEventListener('keydown', handleArrowKeys);
+  }, [onNext, onPrevious, photo]);
 
   if (!photo) return null;
 
@@ -42,11 +48,15 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photo, onClose, ph
 
         {/* Polaroid Card Lightbox (Matching 00:23 in reference video) */}
         <motion.div
+          ref={dialogRef}
           initial={{ scale: 0.8, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.8, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className="relative z-10 flex max-h-full w-full max-w-sm select-none flex-col items-center overflow-y-auto overscroll-contain rounded-2xl border border-white/20 bg-white p-3 pb-4 shadow-2xl sm:max-w-md sm:p-6 sm:pb-8"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Memory photo details"
         >
           {/* Close button */}
           <button
@@ -78,11 +88,17 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({ photo, onClose, ph
 
           {/* Photo container */}
           <div className="relative aspect-[4/4.5] max-h-[min(58dvh,520px)] w-full overflow-hidden rounded-xl bg-gray-900 shadow-inner">
-            <img
-              src={photo.url}
-              alt={photo.caption || 'Memory Photo'}
-              className="w-full h-full object-cover"
-            />
+            {imageFailure !== 'fallback' && (
+              <img
+                src={imageFailure === 'primary' ? '/default-surprise.svg' : photo.url}
+                alt={photo.caption || 'Memory Photo'}
+                width={800}
+                height={900}
+                decoding="async"
+                onError={() => setImageFailure((previous) => previous ? 'fallback' : 'primary')}
+                className="h-full w-full object-cover"
+              />
+            )}
           </div>
 
           {/* Caption & Info (Matching 00:23 in video) */}

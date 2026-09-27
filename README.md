@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:F97316,100:111827&height=210&section=header&text=Amour&fontSize=78&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=A%20cinematic%20love%20experience%20built%20with%20React&descAlignY=62&descSize=18" alt="Amour banner" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:F97316,100:111827&height=210&section=header&text=Dearli&fontSize=78&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=A%20cinematic%20love%20experience%20built%20with%20React&descAlignY=62&descSize=18" alt="Dearli banner" width="100%" />
 
 <br />
 
@@ -21,7 +21,7 @@
 
 <img src="https://readme-typing-svg.demolab.com?font=Playfair+Display&size=25&duration=3000&pause=900&color=F97316&center=true&vCenter=true&width=760&lines=Unlock+the+memory.;Light+the+moment.;Cut+the+cake.;Read+the+letter.;Float+through+your+memories." alt="Animated feature list" />
 
-<h2>Welcome to Amour 💌</h2>
+<h2>Welcome to Dearli 💌</h2>
 
 <p><strong>A private, cinematic and deeply personal digital experience created to turn meaningful memories into an interactive story.</strong></p>
 
@@ -29,9 +29,9 @@
 
 ---
 
-## ✨ About Amour
+## ✨ About Dearli
 
-**Amour** transforms a birthday or special message into an immersive digital journey.
+**Dearli** transforms a birthday or special message into an immersive digital journey.
 
 Instead of opening a simple greeting card, the recipient unlocks a sequence of interactive scenes — soft transitions, a glowing lamp, a cake-cutting moment, a handwritten-style letter and a floating photo galaxy filled with personal memories.
 
@@ -62,7 +62,7 @@ The project combines **storytelling, animation, personalization and secure priva
 
 ## 💖 Personalize the Entire Story
 
-Amour is designed so that each experience can feel completely personal.
+Dearli is designed so that each experience can feel completely personal.
 
 You can:
 
@@ -85,7 +85,7 @@ The goal is simple: **the technology should disappear, and the memory should bec
 
 Personal memories deserve more than a beautiful interface — they deserve thoughtful protection.
 
-Amour uses a server-backed architecture where:
+Dearli uses a server-backed architecture where:
 
 - Creator configuration is stored through the **Express API**
 - Experience data is stored in **Supabase**
@@ -367,7 +367,7 @@ Then open a pull request describing the improvement.
 
 ## 📄 License
 
-Add the appropriate license for how you want Amour to be reused or distributed.
+Add the appropriate license for how you want Dearli to be reused or distributed.
 
 For a private/personal project, you may choose to keep the source proprietary.  
 For an open-source release, add a `LICENSE` file and state the selected license here.
@@ -386,6 +386,6 @@ For an open-source release, add a `LICENSE` file and state the selected license 
 
 <br /><br />
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:111827,100:F97316&height=110&section=footer&animation=fadeIn" alt="Amour footer" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:111827,100:F97316&height=110&section=footer&animation=fadeIn" alt="Dearli footer" width="100%" />
 
 </div>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_CONFIG } from '../data/defaultData';
 import { AppConfig, PhotoItem, ShareResult } from '../types';
+import { useModalAccessibility } from '../utils/useModalAccessibility';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [shareUrl, setShareUrl] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const dialogRef = useModalAccessibility(isOpen, onClose);
 
   const mainPhotoInputRef = useRef<HTMLInputElement>(null);
   const galleryPhotosInputRef = useRef<HTMLInputElement>(null);
@@ -181,16 +183,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/60 backdrop-blur-sm select-none sm:items-center sm:p-4">
         <motion.div
+          ref={dialogRef}
           initial={{ scale: 0.92, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.92, opacity: 0, y: 20 }}
           className="flex h-[100dvh] max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden border-pink-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:border"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settings-title"
         >
           {/* Top Bar */}
           <div className="flex items-center justify-between border-b border-pink-100 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
+              <h2 id="settings-title" className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
                 Customize experience
               </h2>
             </div>
@@ -295,6 +301,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <input
                         ref={mainPhotoInputRef}
                         type="file"
+                        aria-label="Upload main photo"
                         accept="image/*"
                         onChange={handleMainPhotoUpload}
                         className="hidden"
@@ -318,6 +325,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <input
                       ref={galleryPhotosInputRef}
                       type="file"
+                      aria-label="Add gallery photos"
                       accept="image/*"
                       multiple
                       onChange={handleGalleryUpload}
@@ -335,7 +343,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <div className="aspect-square w-full rounded-lg overflow-hidden bg-black/10 relative">
                           <img
                             src={photo.url}
-                            alt="Memory"
+                            alt={photo.caption || 'Gallery photo preview'}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                           <button
@@ -348,6 +358,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </div>
                         <input
                           type="text"
+                            aria-label={`Caption for ${photo.caption || 'gallery photo'}`}
                           value={photo.caption}
                           placeholder="Caption..."
                           onChange={(e) => handleUpdateCaption(photo.id, e.target.value)}
@@ -388,6 +399,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Recipient name"
                     value={tempConfig.recipientName}
                     onChange={(e) =>
                       setTempConfig({ ...tempConfig, recipientName: e.target.value })
@@ -403,6 +415,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Sender name"
                     value={tempConfig.senderName}
                     onChange={(e) =>
                       setTempConfig({ ...tempConfig, senderName: e.target.value })
@@ -418,6 +431,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Passcode"
                     maxLength={6}
                     value={tempConfig.passcode}
                     onChange={(e) =>
@@ -437,6 +451,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Polaroid caption"
                     value={tempConfig.polaroidText}
                     onChange={(e) =>
                       setTempConfig({ ...tempConfig, polaroidText: e.target.value })
@@ -452,6 +467,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Cake celebration heading"
                     value={tempConfig.cakeCelebrationText}
                     onChange={(e) =>
                       setTempConfig({ ...tempConfig, cakeCelebrationText: e.target.value })
@@ -472,6 +488,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Letter title"
                     value={tempConfig.letterTitle}
                     onChange={(e) =>
                       setTempConfig({ ...tempConfig, letterTitle: e.target.value })
@@ -486,6 +503,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Letter greeting"
                     value={tempConfig.letterGreeting}
                     onChange={(e) =>
                       setTempConfig({ ...tempConfig, letterGreeting: e.target.value })
@@ -500,6 +518,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <textarea
                     rows={6}
+                    aria-label="Letter message paragraphs"
                     value={tempConfig.letterBody.join('\n\n')}
                     onChange={(e) =>
                       setTempConfig({
@@ -520,6 +539,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    aria-label="Letter closing"
                     value={tempConfig.letterClosing}
                     onChange={(e) =>
                       setTempConfig({ ...tempConfig, letterClosing: e.target.value })
@@ -558,6 +578,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                     <button
                       onClick={() => audioInputRef.current?.click()}
+                      aria-label="Upload background music"
                       className="px-3.5 py-2 bg-white hover:bg-pink-100 text-pink-700 text-xs font-semibold rounded-xl border border-pink-300 transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <Upload size={15} /> Upload MP3
@@ -565,6 +586,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <input
                       ref={audioInputRef}
                       type="file"
+                      aria-label="Upload background music"
                       accept="audio/*"
                       onChange={handleAudioUpload}
                       className="hidden"

@@ -1,23 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Gift, Settings } from 'lucide-react';
 import { DEFAULT_CONFIG } from './data/defaultData';
 import { AppConfig, SceneType, ShareResult } from './types';
 import { musicPlayer } from './utils/audio';
 import { prepareConfigForShare } from './utils/shareMedia';
+import { DeveloperCredit } from './components/DeveloperCredit';
 
-import { FloatingHearts } from './components/FloatingHearts';
-import { MusicPlayer } from './components/MusicPlayer';
-import { FloralTransition } from './components/FloralTransition';
-import { LoveNotesModal } from './components/LoveNotesModal';
-import { LoveReasonsModal } from './components/LoveReasonsModal';
-import { SettingsModal } from './components/SettingsModal';
-
-import { LandingScene } from './components/LandingScene';
-import { LampScene } from './components/LampScene';
-import { CakeScene } from './components/CakeScene';
-import { LetterScene } from './components/LetterScene';
-import { SpaceGalleryScene } from './components/SpaceGalleryScene';
+const FloatingHearts = lazy(() => import('./components/FloatingHearts').then((module) => ({ default: module.FloatingHearts })));
+const MusicPlayer = lazy(() => import('./components/MusicPlayer').then((module) => ({ default: module.MusicPlayer })));
+const FloralTransition = lazy(() => import('./components/FloralTransition').then((module) => ({ default: module.FloralTransition })));
+const LoveNotesModal = lazy(() => import('./components/LoveNotesModal').then((module) => ({ default: module.LoveNotesModal })));
+const LoveReasonsModal = lazy(() => import('./components/LoveReasonsModal').then((module) => ({ default: module.LoveReasonsModal })));
+const SettingsModal = lazy(() => import('./components/SettingsModal').then((module) => ({ default: module.SettingsModal })));
+const LandingScene = lazy(() => import('./components/LandingScene').then((module) => ({ default: module.LandingScene })));
+const LampScene = lazy(() => import('./components/LampScene').then((module) => ({ default: module.LampScene })));
+const CakeScene = lazy(() => import('./components/CakeScene').then((module) => ({ default: module.CakeScene })));
+const LetterScene = lazy(() => import('./components/LetterScene').then((module) => ({ default: module.LetterScene })));
+const SpaceGalleryScene = lazy(() => import('./components/SpaceGalleryScene').then((module) => ({ default: module.SpaceGalleryScene })));
 
 const STORAGE_KEY = 'romantic_birthday_app_config_v3';
 const SHARE_PARAM = 'surprise';
@@ -70,6 +70,13 @@ export default function App() {
     sharedSurpriseId ? 'loading' : 'unlocked',
   );
   const [sharedPasscodeLength, setSharedPasscodeLength] = useState(4);
+
+  useEffect(() => {
+    document.querySelector('meta[name="robots"]')?.setAttribute(
+      'content',
+      sharedSurpriseId ? 'noindex, nofollow, noarchive' : 'index, follow',
+    );
+  }, [sharedSurpriseId]);
 
   useEffect(() => {
     if (!sharedSurpriseId) {
@@ -276,12 +283,12 @@ export default function App() {
 
   if (entryMode === 'home') {
     return (
-      <main className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-y-auto bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] text-gray-800 sm:p-6">
+      <main className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-y-auto bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] text-gray-800 sm:p-6">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.18),_transparent_35%),radial-gradient(circle_at_bottom,_rgba(251,191,36,0.15),_transparent_30%)]" />
 
         <div className="relative z-10 w-full max-w-4xl rounded-[1.5rem] border border-pink-200/80 bg-white/75 p-5 shadow-[0_20px_80px_-25px_rgba(244,114,182,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-8 md:p-12">
           <div className="text-center">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-pink-500 sm:mb-4 sm:text-xs sm:tracking-[0.35em]">Birthday surprise</p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-pink-500 sm:mb-4 sm:text-xs sm:tracking-[0.35em]">Dearli</p>
             <h1 className="mx-auto max-w-2xl font-serif text-[2rem] font-bold leading-[1.08] text-gray-800 sm:text-4xl md:text-5xl">A little love, beautifully wrapped</h1>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-5 text-gray-600 sm:mt-5 sm:text-base sm:leading-relaxed md:text-lg">
               Create something special and share it with someone you love.
@@ -321,15 +328,21 @@ export default function App() {
           </div>
         </div>
 
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          config={config}
-          onClose={() => setIsSettingsOpen(false)}
-          onSave={handleSaveConfig}
-          onClearPhotos={handleClearPhotos}
-          onReplay={handleReplay}
-          onShareCurrentConfig={handleShareCurrentConfig}
-        />
+        <DeveloperCredit />
+
+        {isSettingsOpen && (
+          <Suspense fallback={null}>
+            <SettingsModal
+              isOpen={isSettingsOpen}
+              config={config}
+              onClose={() => setIsSettingsOpen(false)}
+              onSave={handleSaveConfig}
+              onClearPhotos={handleClearPhotos}
+              onReplay={handleReplay}
+              onShareCurrentConfig={handleShareCurrentConfig}
+            />
+          </Suspense>
+        )}
       </main>
     );
   }
@@ -337,7 +350,7 @@ export default function App() {
   if (sharedSurpriseState === 'loading') {
     return (
       <main className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-gray-700">
-        Loading your surprise...
+        Preparing your surprise...
       </main>
     );
   }
@@ -367,11 +380,11 @@ export default function App() {
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-clip font-sans antialiased select-none">
       {/* Background Floating Hearts Particle Ambiance (only for pastel scenes) */}
-      {!isDarkScene && <FloatingHearts count={16} />}
+      {!isDarkScene && <Suspense fallback={null}><FloatingHearts count={16} /></Suspense>}
 
       {/* Persistent Romantic Music Player */}
       {(sharedSurpriseState === 'unlocked' || !sharedSurpriseId) && (
-        <MusicPlayer
+        <Suspense fallback={null}><MusicPlayer
           customMusicTitle={config.musicTitle}
           onUploadCustomMusic={(file) => {
             const reader = new FileReader();
@@ -389,16 +402,18 @@ export default function App() {
           }}
           dark={isDarkScene}
           canUpload={!sharedSurpriseId}
-        />
+        /></Suspense>
       )}
 
       {/* Floral Blossom Burst Transition (00:03 - 00:04 in video) */}
-      <FloralTransition
-        isActive={isFloralActive}
-        onComplete={handleFloralComplete}
-      />
+      {isFloralActive && (
+        <Suspense fallback={<div className="sr-only" role="status">Preparing your surprise...</div>}>
+          <FloralTransition isActive={isFloralActive} onComplete={handleFloralComplete} />
+        </Suspense>
+      )}
 
       {/* SCENE ROUTER */}
+      <Suspense fallback={<div className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 text-center text-gray-700" role="status">Preparing your surprise...</div>}>
       <AnimatePresence mode="wait">
         {currentScene === 'landing' && (
           <LandingScene
@@ -464,31 +479,16 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+      </Suspense>
 
       {/* Reasons I Love You & Love Match Modal */}
-      <LoveReasonsModal
-        isOpen={isLoveReasonsOpen}
-        onClose={() => setIsLoveReasonsOpen(false)}
-        recipientName={config.recipientName}
-      />
+      {isLoveReasonsOpen && <Suspense fallback={null}><LoveReasonsModal isOpen={isLoveReasonsOpen} onClose={() => setIsLoveReasonsOpen(false)} recipientName={config.recipientName} /></Suspense>}
 
       {/* Love Notes & Comments Modal */}
-      <LoveNotesModal
-        isOpen={isNotesOpen}
-        onClose={() => setIsNotesOpen(false)}
-        recipientName={config.recipientName}
-      />
+      {isNotesOpen && <Suspense fallback={null}><LoveNotesModal isOpen={isNotesOpen} onClose={() => setIsNotesOpen(false)} recipientName={config.recipientName} /></Suspense>}
 
       {/* Customization Settings Drawer / Modal */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        config={config}
-        onClose={() => setIsSettingsOpen(false)}
-        onSave={handleSaveConfig}
-        onClearPhotos={handleClearPhotos}
-        onReplay={handleReplay}
-        onShareCurrentConfig={handleShareCurrentConfig}
-      />
+      {isSettingsOpen && <Suspense fallback={null}><SettingsModal isOpen={isSettingsOpen} config={config} onClose={() => setIsSettingsOpen(false)} onSave={handleSaveConfig} onClearPhotos={handleClearPhotos} onReplay={handleReplay} onShareCurrentConfig={handleShareCurrentConfig} /></Suspense>}
     </main>
   );
 }

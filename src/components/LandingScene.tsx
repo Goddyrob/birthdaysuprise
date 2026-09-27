@@ -46,6 +46,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
   const [sharesCount, setSharesCount] = useState(5);
   const [errorShake, setErrorShake] = useState(false);
   const [unlockError, setUnlockError] = useState('');
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const [mainPhotoLoaded, setMainPhotoLoaded] = useState(false);
   const [fallbackImageFailed, setFallbackImageFailed] = useState(false);
   const [pendingSuccess, setPendingSuccess] = useState(false);
@@ -75,6 +76,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
     : mainPhoto || defaultSurpriseImage;
 
   const handleDigitPress = (digit: string) => {
+    if (isUnlocking) return;
     playKeySound();
 
     if (digit === 'del' || digit === '10' || digit === '*') {
@@ -112,10 +114,11 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
         }, 600);
       };
 
+      setIsUnlocking(true);
       void unlock().catch(() => {
         setUnlockError('This surprise could not be unlocked right now. Please try again.');
         setEnteredDigits([]);
-      });
+      }).finally(() => setIsUnlocking(false));
       return;
     }
   };
@@ -215,7 +218,10 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 {displayedPhoto && (
                   <img
                     src={displayedPhoto}
-                    alt="Birthday Memory"
+                    alt="Main surprise photo"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     onLoad={() => setMainPhotoLoaded(true)}
                     onError={() => {
                       setMainPhotoLoaded(true);
@@ -244,6 +250,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 <input
                   ref={fileInputRef}
                   type="file"
+                  aria-label="Upload main surprise photo"
                   accept="image/*"
                   onChange={handlePhotoUpload}
                   className="hidden"
@@ -319,6 +326,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleDigitPress(val === '10' ? 'del' : val)}
+                    disabled={isUnlocking}
                     className="mx-auto flex h-11 w-11 select-none items-center justify-center rounded-full border border-pink-100/90 bg-white/90 font-sans text-lg font-bold text-gray-800 shadow-md transition-colors hover:bg-white hover:text-pink-600 active:scale-95 sm:h-[72px] sm:w-[72px] sm:text-2xl"
                   >
                     {isBack && val === '10' ? (
@@ -336,7 +344,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
             {/* Passcode helper / Instant unlock for testing */}
             <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 sm:mt-5 sm:gap-3">
               <span className="rounded-full bg-pink-100/60 px-2 py-1 text-[10px] font-medium text-pink-700/70 sm:px-3 sm:text-xs">
-                {onUnlock ? 'Enter your private passcode' : `Hint: ${passcode || '1234'}`}
+                {isUnlocking ? 'Unlocking...' : onUnlock ? 'Enter your private passcode' : `Hint: ${passcode || '1234'}`}
               </span>
               {!onUnlock && (
                 <button
@@ -351,7 +359,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 </button>
               )}
             </div>
-            {unlockError && <p className="mt-2 text-xs font-medium text-rose-600 sm:mt-3 sm:text-sm" role="alert">{unlockError}</p>}
+            {unlockError && <p className="mt-2 text-xs font-medium text-rose-600 sm:mt-3 sm:text-sm" role="alert" aria-live="polite">{unlockError}</p>}
           </div>
 
           {/* RIGHT RAIL: TikTok / Instagram Style Interactive Action Bar (Matching Reference Video) */}

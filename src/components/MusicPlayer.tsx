@@ -64,6 +64,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         <button
           onClick={handleToggle}
           title={isPlaying ? 'Pause Music' : 'Play Music'}
+          aria-label={isPlaying ? 'Pause music' : 'Play music'}
           className={`flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-95 ${
             dark ? 'hover:bg-white/10 text-pink-300' : 'hover:bg-pink-100 text-pink-600'
           }`}
@@ -72,8 +73,11 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         </button>
 
         {/* Animated Sound Wave Bars */}
-        <div 
+        <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-label={isExpanded ? 'Hide music controls' : 'Show music controls'}
+          aria-expanded={isExpanded}
           className="flex items-center gap-1 cursor-pointer select-none"
         >
           <div className="flex items-end gap-0.5 h-4 w-4">
@@ -99,7 +103,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
           <span className="text-xs font-medium max-w-[120px] truncate hidden sm:inline-block ml-1">
             {customMusicTitle}
           </span>
-        </div>
+        </button>
 
         {/* Expandable Controls (Volume & Upload) */}
         {isExpanded && (
@@ -128,6 +132,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
               min="0"
               max="1"
               step="0.05"
+              aria-label="Music volume"
               value={volume}
               onChange={handleVolumeChange}
               className="w-16 h-1 bg-pink-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
@@ -137,6 +142,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
               <>
                 <button
                   onClick={() => fileInputRef.current?.click()}
+                  aria-label="Upload your own song"
                   title="Upload Your Own Song (MP3)"
                   className="flex h-11 w-11 items-center justify-center rounded text-pink-500 hover:text-pink-600"
                 >

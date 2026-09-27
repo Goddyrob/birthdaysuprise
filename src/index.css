@@ -36,6 +36,11 @@ body {
   overscroll-behavior-x: none;
 }
 
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid #9f1239 !important;
+  outline-offset: 2px !important;
+}
+
 .safe-area-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }

@@ -1,7 +1,7 @@
 {
-  "name": "Amour Birthday Surprise",
-  "short_name": "Amour",
-  "description": "A private romantic birthday surprise and memory journey.",
+  "name": "Dearli",
+  "short_name": "Dearli",
+  "description": "Create beautiful personalized digital surprises to share with someone special.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "icons": [
     {
       "src": "/icon.svg",
-      "sizes": "192x192",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }

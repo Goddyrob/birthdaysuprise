@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { RotateCcw, Plus, Sparkles, Settings, Eye, Heart } from 'lucide-react';
 import { PhotoItem } from '../types';
 import { PhotoLightbox } from './PhotoLightbox';
+import { DeveloperCredit } from './DeveloperCredit';
 
 interface SpaceGallerySceneProps {
   photos: PhotoItem[];
@@ -27,14 +28,14 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
 }) => {
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const [imageFailures, setImageFailures] = useState<Record<string, 'primary' | 'fallback'>>({});
   const [stars, setStars] = useState<{ id: number; x: number; y: number; size: number; opacity: number; animDuration: number }[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Generate starry sky
   useEffect(() => {
-    const starList = Array.from({ length: 120 }, (_, i) => ({
+    const starCount = window.matchMedia('(max-width: 767px)').matches ? 48 : 80;
+    const starList = Array.from({ length: starCount }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -45,25 +46,6 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
     setStars(starList);
   }, []);
 
-  // Parallax on mouse move
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const { innerWidth, innerHeight } = window;
-    const x = (e.clientX / innerWidth - 0.5) * 20;
-    const y = (e.clientY / innerHeight - 0.5) * 20;
-    setMouseOffset({ x, y });
-  };
-
-  // Touch parallax for mobile
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length > 0) {
-      const touch = e.touches[0];
-      const { innerWidth, innerHeight } = window;
-      const x = (touch.clientX / innerWidth - 0.5) * 15;
-      const y = (touch.clientY / innerHeight - 0.5) * 15;
-      setMouseOffset({ x, y });
-    }
-  };
-
   const selectPhotoAt = (index: number) => {
     const normalizedIndex = (index + photos.length) % photos.length;
     setSelectedIndex(normalizedIndex);
@@ -73,9 +55,6 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
   // Ensure default positions for any added photos
   return (
     <div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onTouchMove={handleTouchMove}
       className="relative flex h-[100dvh] min-h-[100dvh] w-full flex-col justify-between overflow-hidden bg-[#06070e] pb-[env(safe-area-inset-bottom)] text-white select-none"
     >
       {/* Background Cosmic Starfield */}
@@ -131,12 +110,19 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
               onClick={() => { setSelectedPhoto(photo); setSelectedIndex(index); }}
               className={`group relative min-h-0 overflow-hidden rounded-2xl border border-white/15 bg-[#18181f] text-left shadow-[0_12px_35px_rgba(0,0,0,0.45)] ${index === 0 ? 'col-span-2 row-span-2 md:col-span-2 md:row-span-2' : index === 3 ? 'col-span-2 md:col-span-2' : ''}`}
             >
-              <img
-                src={photo.url}
-                alt={photo.caption || `Memory ${index + 1}`}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-              />
+              {imageFailures[photo.id || String(index)] !== 'fallback' && (
+                <img
+                  src={imageFailures[photo.id || String(index)] === 'primary' ? '/default-surprise.svg' : photo.url}
+                  alt={photo.caption || `Memory ${index + 1}`}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  onError={() => setImageFailures((previous) => ({
+                    ...previous,
+                    [photo.id || String(index)]: previous[photo.id || String(index)] ? 'fallback' : 'primary',
+                  }))}
+                  className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+              )}
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-3 pt-10 text-xs font-medium text-white sm:text-sm">
                 {photo.caption || photo.date || 'Memory'}
               </span>
@@ -212,16 +198,19 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
       </footer>
 
       {isRecipientMode && onCreateOwn && (
-        <section className="safe-area-bottom relative z-30 border-t border-white/10 bg-black/25 px-4 py-5 text-center sm:px-5 sm:py-8">
-          <p className="font-serif text-xl text-pink-100">Loved this surprise?</p>
-          <button
-            type="button"
-            onClick={onCreateOwn}
-            className="mt-3 min-h-11 rounded-full border border-pink-300/50 bg-pink-500/20 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-pink-500/35"
-          >
-            Create Your Own Surprise
-          </button>
-        </section>
+        <>
+          <section className="relative z-30 border-t border-white/10 bg-black/25 px-4 py-5 text-center sm:px-5 sm:py-8">
+            <p className="font-serif text-xl text-pink-100">Loved this surprise?</p>
+            <button
+              type="button"
+              onClick={onCreateOwn}
+              className="mt-3 min-h-11 rounded-full border border-pink-300/50 bg-pink-500/20 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-pink-500/35"
+            >
+              Create Your Own Surprise
+            </button>
+          </section>
+          <DeveloperCredit dark />
+        </>
       )}
 
       {/* Lightbox Modal for Photo Details */}

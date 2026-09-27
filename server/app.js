@@ -36,9 +36,10 @@ app.post('/api/surprises', async (req, res) => {
     return res.status(201).json(result);
   } catch (error) {
     console.error('Create surprise failed:', error.message);
+    const status = error.statusCode || 500;
     return res.status(error.statusCode || 500).json({
       code: error.code || 'SURPRISE_SAVE_FAILED',
-      error: error.statusCode ? error.message : 'Unable to create surprise',
+      error: status >= 500 ? 'Unable to create surprise' : error.message,
     });
   }
 });
@@ -61,7 +62,8 @@ app.get('/api/surprises/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Get surprise metadata failed:', error.message);
-    return res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : 'Unable to load surprise' });
+    const status = error.statusCode || 500;
+    return res.status(status).json({ error: status >= 500 ? 'Unable to load surprise' : error.message });
   }
 });
 
@@ -79,7 +81,14 @@ app.post('/api/surprises/:id/unlock', async (req, res) => {
   } catch (error) {
     const status = error.statusCode || 500;
     if (status >= 500) console.error('Unlock surprise failed:', error.message);
-    return res.status(status).json({ error: status === 401 ? 'Incorrect passcode' : error.message });
+    const message = status === 401
+      ? 'Incorrect passcode'
+      : status === 429
+        ? error.message
+        : status >= 500
+          ? 'Unable to unlock surprise'
+          : error.message;
+    return res.status(status).json({ error: message });
   }
 });
 

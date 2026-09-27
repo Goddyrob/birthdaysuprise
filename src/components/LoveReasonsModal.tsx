@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Heart, X, Sparkles, RefreshCw, Bookmark, Gift } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { playKeySound, playPasscodeSuccessSound } from '../utils/audio';
+import { useModalAccessibility } from '../utils/useModalAccessibility';
 
 interface LoveReasonsModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
   const [revealedReasons, setRevealedReasons] = useState<number[]>([0, 1, 2]);
   const [lovePercentage, setLovePercentage] = useState(100);
   const [loveMessage, setLoveMessage] = useState('Infinity & Beyond! 💖');
+  const dialogRef = useModalAccessibility(isOpen, onClose);
 
   const handleRevealNext = () => {
     playKeySound();
@@ -81,16 +83,20 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/60 backdrop-blur-sm select-none sm:items-center sm:p-4">
         <motion.div
+          ref={dialogRef}
           initial={{ scale: 0.92, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.92, opacity: 0, y: 20 }}
           className="flex h-[100dvh] max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden border-pink-200 bg-white shadow-2xl sm:h-auto sm:max-h-[85vh] sm:rounded-3xl sm:border"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="love-reasons-title"
         >
           {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-pink-100 bg-gradient-to-r from-pink-50 via-rose-50 to-pink-50 px-4 py-3 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-6 sm:py-4">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
-              <h3 className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
+              <h3 id="love-reasons-title" className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
                 Reasons I love you
               </h3>
             </div>

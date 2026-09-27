@@ -1,8 +1,6 @@
 {
-  "name": "Romantic Cinematic Birthday & Love Experience",
-  "description": "An interactive, customizable romantic birthday website featuring passcode unlock, floral transitions, pull-cord lamp, cake slicing, animated love letter, and a 3D cinematic floating photo galaxy.",
+  "name": "Dearli — Create Beautiful Digital Surprises",
+  "description": "Create personalized digital surprises with photos, heartfelt messages, and memorable moments to share with someone special.",
   "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "majorCapabilities": []
 }
