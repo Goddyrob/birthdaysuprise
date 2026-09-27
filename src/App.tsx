@@ -206,15 +206,6 @@ export default function App() {
     return { url: shareUrl, copied };
   };
 
-  const handleResetDefaults = () => {
-    setConfig(DEFAULT_CONFIG);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {
-      // Ignore
-    }
-  };
-
   const handleClearPhotos = () => {
     const cleared = {
       ...config,
@@ -335,7 +326,6 @@ export default function App() {
           config={config}
           onClose={() => setIsSettingsOpen(false)}
           onSave={handleSaveConfig}
-          onResetDefaults={handleResetDefaults}
           onClearPhotos={handleClearPhotos}
           onReplay={handleReplay}
           onShareCurrentConfig={handleShareCurrentConfig}
@@ -495,7 +485,6 @@ export default function App() {
         config={config}
         onClose={() => setIsSettingsOpen(false)}
         onSave={handleSaveConfig}
-        onResetDefaults={handleResetDefaults}
         onClearPhotos={handleClearPhotos}
         onReplay={handleReplay}
         onShareCurrentConfig={handleShareCurrentConfig}

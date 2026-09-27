@@ -15,6 +15,7 @@ import {
   Check,
   RotateCcw,
 } from 'lucide-react';
+import { DEFAULT_CONFIG } from '../data/defaultData';
 import { AppConfig, PhotoItem, ShareResult } from '../types';
 
 interface SettingsModalProps {
@@ -22,7 +23,6 @@ interface SettingsModalProps {
   config: AppConfig;
   onClose: () => void;
   onSave: (newConfig: AppConfig) => void;
-  onResetDefaults: () => void;
   onClearPhotos: () => void;
   onReplay: () => void;
   onShareCurrentConfig?: (config?: AppConfig) => Promise<ShareResult>;
@@ -33,7 +33,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   config,
   onClose,
   onSave,
-  onResetDefaults,
   onClearPhotos,
   onReplay,
   onShareCurrentConfig,
@@ -369,7 +368,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     Clear All Photos
                   </button>
                   <button
-                    onClick={onResetDefaults}
+                    onClick={() => setTempConfig((prev) => ({
+                      ...prev,
+                      galleryPhotos: DEFAULT_CONFIG.galleryPhotos.map((photo) => ({ ...photo })),
+                    }))}
                     className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors flex items-center gap-1"
                   >
                     <RefreshCw size={13} /> Reset Demo Photos
