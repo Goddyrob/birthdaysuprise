@@ -137,7 +137,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setSavedBadge(true);
     setTimeout(() => {
       setSavedBadge(false);
-      onClose();
     }, 600);
   };
 
