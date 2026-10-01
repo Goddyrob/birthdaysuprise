@@ -42,7 +42,7 @@ const assertMediaReference = (value, field, kind) => {
   }
 
   if (value.startsWith('data:')) {
-    parseDataUrl(value, kind);
+    parseDataUrl(value, kind, false);
     return;
   }
 
@@ -130,7 +130,7 @@ export const validateConfig = (config) => {
   }
 };
 
-const parseDataUrl = (value, kind) => {
+const parseDataUrl = (value, kind, decode = true) => {
   if (!value.startsWith('data:')) return null;
   const match = value.match(/^data:([^;]+);base64,(.+)$/s);
   if (!match) {
@@ -151,16 +151,17 @@ const parseDataUrl = (value, kind) => {
     throw error;
   }
 
-  const buffer = Buffer.from(match[2], 'base64');
   const maxBytes = kind === 'image' ? MAX_IMAGE_BYTES : MAX_AUDIO_BYTES;
-  if (buffer.length > maxBytes) {
+  const encoded = match[2];
+  const estimatedBytes = Math.floor(encoded.length * 0.75) - (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0);
+  if (estimatedBytes > maxBytes) {
     const error = new Error(`${kind} file is too large`);
     error.statusCode = 413;
     error.code = 'MEDIA_UPLOAD_FAILED';
     throw error;
   }
 
-  return { buffer, contentType };
+  return { buffer: decode ? Buffer.from(encoded, 'base64') : undefined, contentType, size: estimatedBytes };
 };
 
 const extensionFor = (contentType) => ({
@@ -174,16 +175,21 @@ const extensionFor = (contentType) => ({
   'audio/mp4': 'm4a',
 }[contentType]);
 
-const uploadDataUrl = async (value, kind, surpriseId, label) => {
+const uploadDataUrl = async (value, kind, surpriseId, label, requestId) => {
   const parsed = parseDataUrl(value, kind);
   if (!parsed) return value;
 
-  const storagePath = `${surpriseId}/${label}-${randomUUID()}.${extensionFor(parsed.contentType)}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, parsed.buffer, {
-    contentType: parsed.contentType,
-    upsert: false,
-  });
-  if (error) {
+  const startedAt = Date.now();
+  const storagePath = `${surpriseId}/${label}.${extensionFor(parsed.contentType)}`;
+  try {
+    const { error } = await supabase.storage.from(BUCKET).upload(storagePath, parsed.buffer, {
+      contentType: parsed.contentType,
+      upsert: true,
+    });
+    if (error) throw error;
+    console.info(JSON.stringify({ event: 'creation_stage', requestId, stage: label.startsWith('gallery-') ? 'gallery_upload' : `${label}_upload`, status: 'ok', elapsedMs: Date.now() - startedAt, bytes: parsed.size }));
+  } catch (error) {
+    console.error(JSON.stringify({ event: 'creation_stage', requestId, stage: label.startsWith('gallery-') ? 'gallery_upload' : `${label}_upload`, status: 'error', elapsedMs: Date.now() - startedAt, bytes: parsed.size, category: error.code || 'storage_error' }));
     error.statusCode = 502;
     error.code = 'MEDIA_UPLOAD_FAILED';
     throw error;
@@ -191,26 +197,65 @@ const uploadDataUrl = async (value, kind, surpriseId, label) => {
   return `storage:${storagePath}`;
 };
 
-export const prepareConfigForStorage = async (inputConfig, surpriseId) => {
+const mapWithConcurrency = async (tasks, concurrency) => {
+  const results = new Array(tasks.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, async () => {
+    while (nextIndex < tasks.length) {
+      const index = nextIndex++;
+      results[index] = await tasks[index]();
+    }
+  });
+  await Promise.all(workers);
+  return results;
+};
+
+export const prepareConfigForStorage = async (inputConfig, surpriseId, requestId) => {
   assertSupabase();
   const clonedConfig = structuredClone(inputConfig);
   const { passcode, ...config } = clonedConfig;
 
-  const [mainPhoto, customAudioUrl, galleryPhotos] = await Promise.all([
-    uploadDataUrl(config.mainPhoto, 'image', surpriseId, 'main'),
-    config.customAudioUrl
-      ? uploadDataUrl(config.customAudioUrl, 'audio', surpriseId, 'audio')
-      : config.customAudioUrl,
-    Promise.all(config.galleryPhotos.map(async (photo, index) => ({
+  const tasks = [() => uploadDataUrl(config.mainPhoto, 'image', surpriseId, 'main', requestId)];
+  const hasAudio = Boolean(config.customAudioUrl);
+  if (hasAudio) tasks.push(() => uploadDataUrl(config.customAudioUrl, 'audio', surpriseId, 'audio', requestId));
+  const galleryStartIndex = tasks.length;
+  config.galleryPhotos.forEach((photo, index) => {
+    tasks.push(async () => ({
       ...photo,
-      url: await uploadDataUrl(photo.url, 'image', surpriseId, `gallery-${index}`),
-    }))),
-  ]);
+      url: await uploadDataUrl(photo.url, 'image', surpriseId, `gallery-${index}`, requestId),
+    }));
+  });
+  const uploaded = await mapWithConcurrency(tasks, 3);
 
-  config.mainPhoto = mainPhoto;
-  config.customAudioUrl = customAudioUrl;
-  config.galleryPhotos = galleryPhotos;
+  config.mainPhoto = uploaded[0];
+  if (hasAudio) config.customAudioUrl = uploaded[1];
+  config.galleryPhotos = uploaded.slice(galleryStartIndex);
   return config;
+};
+
+export const uploadDraftMedia = async (creationId, files, requestId) => {
+  assertSupabase();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(creationId || '')
+    || !Array.isArray(files) || files.length > 12) {
+    const error = new Error('Invalid media upload request');
+    error.statusCode = 400;
+    error.code = 'VALIDATION_FAILED';
+    throw error;
+  }
+  files.forEach((file) => {
+    if (!file || !/^(main|audio|gallery-\d{1,2})$/.test(file.key)
+      || !['image', 'audio'].includes(file.kind) || typeof file.dataUrl !== 'string') {
+      const error = new Error('Invalid media upload request');
+      error.statusCode = 400;
+      error.code = 'VALIDATION_FAILED';
+      throw error;
+    }
+  });
+  const uploaded = await mapWithConcurrency(files.map((file) => async () => ({
+    key: file.key,
+    reference: await uploadDataUrl(file.dataUrl, file.kind, creationId, file.key, requestId),
+  })), 3);
+  return uploaded;
 };
 
 const resolveMedia = async (value) => {
@@ -237,14 +282,46 @@ export const hydrateConfigForClient = async (storedConfig) => {
   return config;
 };
 
-export const createSurprise = async (config) => {
+export const createSurprise = async (config, requestId, requestedId) => {
   assertSupabase();
-  validateConfig(config);
-  const id = randomUUID();
+  const validationStartedAt = Date.now();
+  try {
+    validateConfig(config);
+    console.info(JSON.stringify({ event: 'creation_stage', requestId, stage: 'validation', status: 'ok', elapsedMs: Date.now() - validationStartedAt }));
+  } catch (error) {
+    console.warn(JSON.stringify({ event: 'creation_stage', requestId, stage: 'validation', status: 'error', elapsedMs: Date.now() - validationStartedAt, category: error.code || (error.statusCode === 400 ? 'invalid_config' : 'validation_error') }));
+    throw error;
+  }
+  const id = requestedId || randomUUID();
+  if (requestedId) {
+    if (typeof requestedId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedId)) {
+      const error = new Error('Invalid creation request ID');
+      error.statusCode = 400;
+      error.code = 'VALIDATION_FAILED';
+      throw error;
+    }
+    const lookupStartedAt = Date.now();
+    const { data: existing, error: lookupError } = await supabase.from('surprises').select('id').eq('id', id).maybeSingle();
+    if (lookupError) {
+      lookupError.statusCode = 502;
+      lookupError.code = 'SUPABASE_LOOKUP_FAILED';
+      throw lookupError;
+    }
+    console.info(JSON.stringify({ event: 'creation_stage', requestId, stage: 'idempotency_lookup', status: 'ok', elapsedMs: Date.now() - lookupStartedAt }));
+    if (existing) return existing;
+  }
+
+  const mediaStartedAt = Date.now();
+  const hashStartedAt = Date.now();
   const [preparedConfig, passcodeHash] = await Promise.all([
-    prepareConfigForStorage(config, id),
-    bcrypt.hash(config.passcode, 12),
+    prepareConfigForStorage(config, id, requestId),
+    bcrypt.hash(config.passcode, 12).then((hash) => {
+      console.info(JSON.stringify({ event: 'creation_stage', requestId, stage: 'passcode_hash', status: 'ok', elapsedMs: Date.now() - hashStartedAt }));
+      return hash;
+    }),
   ]);
+  console.info(JSON.stringify({ event: 'creation_stage', requestId, stage: 'media_uploads', status: 'ok', elapsedMs: Date.now() - mediaStartedAt, imageCount: 1 + config.galleryPhotos.length }));
+  const insertStartedAt = Date.now();
   const { data, error } = await supabase
     .from('surprises')
     .insert({
@@ -258,9 +335,16 @@ export const createSurprise = async (config) => {
     .select('id')
     .single();
   if (error) {
+    console.error(JSON.stringify({ event: 'creation_stage', requestId, stage: 'supabase_insert', status: 'error', elapsedMs: Date.now() - insertStartedAt, category: error.code || 'database_error' }));
+    if (requestedId) {
+      const { data: existing } = await supabase.from('surprises').select('id').eq('id', id).maybeSingle();
+      if (existing) return existing;
+    }
     error.statusCode = 502;
+    error.code = 'SUPABASE_INSERT_FAILED';
     throw error;
   }
+  console.info(JSON.stringify({ event: 'creation_stage', requestId, stage: 'supabase_insert', status: 'ok', elapsedMs: Date.now() - insertStartedAt, id: data.id }));
   return data;
 };
 

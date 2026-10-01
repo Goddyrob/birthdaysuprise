@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -18,6 +18,20 @@ import {
 import { DEFAULT_CONFIG } from '../data/defaultData';
 import { AppConfig, PhotoItem, ShareResult } from '../types';
 import { useModalAccessibility } from '../utils/useModalAccessibility';
+import { clearCreatorDraft, loadCreatorDraft, saveCreatorDraft } from '../utils/creatorDraft';
+
+const MAX_GALLERY_PHOTOS = 10;
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+const MAX_SELECTED_PHOTO_BYTES = 60 * 1024 * 1024;
+
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Unable to read photo'));
+  reader.onerror = () => reject(reader.error || new Error('Unable to read photo'));
+  reader.readAsDataURL(file);
+});
+
+const dataUrlBytes = (value: string) => value.startsWith('data:') ? Math.floor(value.length * 0.75) : 0;
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -26,7 +40,7 @@ interface SettingsModalProps {
   onSave: (newConfig: AppConfig) => void;
   onClearPhotos: () => void;
   onReplay: () => void;
-  onShareCurrentConfig?: (config?: AppConfig) => Promise<ShareResult>;
+  onShareCurrentConfig?: (config?: AppConfig, onProgress?: (stage: string) => void) => Promise<ShareResult>;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -45,61 +59,122 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [shareUrl, setShareUrl] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareStage, setShareStage] = useState('');
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftPhotosMissing, setDraftPhotosMissing] = useState(false);
+  const [draftPublished, setDraftPublished] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftDirty, setDraftDirty] = useState(false);
   const dialogRef = useModalAccessibility(isOpen, onClose);
+  const shareInFlightRef = useRef(false);
 
   const mainPhotoInputRef = useRef<HTMLInputElement>(null);
   const galleryPhotosInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync when opened
-  React.useEffect(() => {
-    if (isOpen) {
-      setTempConfig(config);
-    }
-  }, [isOpen, config]);
+  const updateTempConfig = (update: React.SetStateAction<AppConfig>) => {
+    setDraftDirty(true);
+    setTempConfig(update);
+  };
 
-  const handleMainPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    let active = true;
+    loadCreatorDraft().then((draft) => {
+      if (!active) return;
+      if (draft) {
+        setTempConfig({
+          ...config,
+          ...draft,
+          mainPhoto: draft.mainPhoto || config.mainPhoto,
+          galleryPhotos: (draft.galleryPhotos || config.galleryPhotos).filter((photo) => Boolean(photo.url)),
+        });
+        setDraftRestored(true);
+        setDraftDirty(true);
+        setDraftPhotosMissing(!draft.mainPhoto || Boolean(draft.galleryPhotos?.some((photo) => !photo.url)));
+      }
+      setDraftReady(true);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady || !draftDirty || isSharing || draftPublished) return;
+    const timeout = window.setTimeout(() => {
+      void saveCreatorDraft(tempConfig).catch(() => undefined);
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [tempConfig, draftReady, draftDirty, isSharing, draftPublished]);
+
+  useEffect(() => {
+    if (!draftReady || !draftDirty || draftPublished) return;
+    const flushDraft = () => { void saveCreatorDraft(tempConfig).catch(() => undefined); };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushDraft();
+    };
+    window.addEventListener('pagehide', flushDraft);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('pagehide', flushDraft);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [tempConfig, draftReady, draftDirty, draftPublished]);
+
+  const validatePhotoFiles = (files: File[], replacingMain = false) => {
+    if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type))) {
+      setShareError('Choose JPG, PNG, WEBP, or GIF photos.');
+      return false;
+    }
+    if (files.some((file) => file.size > MAX_PHOTO_BYTES)) {
+      setShareError('Each photo must be 20 MB or smaller.');
+      return false;
+    }
+    const nextCount = tempConfig.galleryPhotos.length + (replacingMain ? 0 : files.length);
+    if (nextCount > MAX_GALLERY_PHOTOS) {
+      setShareError(`Choose no more than ${MAX_GALLERY_PHOTOS} gallery photos.`);
+      return false;
+    }
+    const existingBytes = dataUrlBytes(tempConfig.mainPhoto)
+      + tempConfig.galleryPhotos.reduce((total, photo) => total + dataUrlBytes(photo.url), 0)
+      - (replacingMain ? dataUrlBytes(tempConfig.mainPhoto) : 0);
+    if (existingBytes + files.reduce((total, file) => total + file.size, 0) > MAX_SELECTED_PHOTO_BYTES) {
+      setShareError('Selected photos must total 60 MB or less. Remove a photo and try again.');
+      return false;
+    }
+    setShareError('');
+    return true;
+  };
+
+  const handleMainPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          setTempConfig((prev) => ({
-            ...prev,
-            mainPhoto: ev.target!.result as string,
-          }));
-        }
-      };
-      reader.readAsDataURL(file);
+    e.target.value = '';
+    if (!file || !validatePhotoFiles([file], true)) return;
+    try {
+      const mainPhoto = await readFileAsDataUrl(file);
+      updateTempConfig((prev) => ({ ...prev, mainPhoto }));
+    } catch {
+      setShareError('We could not read that photo. Please choose it again.');
     }
   };
 
-  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      (Array.from(files) as File[]).forEach((file: File, i: number) => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          if (ev.target?.result) {
-            const newPhoto: PhotoItem = {
-              id: `custom-${Date.now()}-${i}`,
-              url: ev.target!.result as string,
-              caption: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Special Memory ❤️',
-              date: 'Cherished Moment',
-              rotation: (Math.random() * 14) - 7,
-              x: Math.floor(Math.random() * 70) + 15,
-              y: Math.floor(Math.random() * 60) + 20,
-              z: Math.floor(Math.random() * 80) - 20,
-              scale: 1,
-            };
-            setTempConfig((prev) => ({
-              ...prev,
-              galleryPhotos: [...prev.galleryPhotos, newPhoto],
-            }));
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []) as File[];
+    e.target.value = '';
+    if (!files.length || !validatePhotoFiles(files)) return;
+    try {
+      const photos: PhotoItem[] = await Promise.all(files.map(async (file, index) => ({
+        id: `custom-${Date.now()}-${index}`,
+        url: await readFileAsDataUrl(file),
+        caption: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Special Memory',
+        date: 'Cherished Moment',
+        rotation: (Math.random() * 14) - 7,
+        x: Math.floor(Math.random() * 70) + 15,
+        y: Math.floor(Math.random() * 60) + 20,
+        z: Math.floor(Math.random() * 80) - 20,
+        scale: 1,
+      })));
+      updateTempConfig((prev) => ({ ...prev, galleryPhotos: [...prev.galleryPhotos, ...photos] }));
+    } catch {
+      setShareError('We could not read one of those photos. Please choose them again.');
     }
   };
 
@@ -109,7 +184,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const reader = new FileReader();
       reader.onload = (ev) => {
         if (ev.target?.result) {
-          setTempConfig((prev) => ({
+          updateTempConfig((prev) => ({
             ...prev,
             customAudioUrl: ev.target!.result as string,
             musicTitle: file.name.replace(/\.[^/.]+$/, ''),
@@ -121,14 +196,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleRemoveGalleryPhoto = (id: string) => {
-    setTempConfig((prev) => ({
+    updateTempConfig((prev) => ({
       ...prev,
       galleryPhotos: prev.galleryPhotos.filter((p) => p.id !== id),
     }));
   };
 
   const handleUpdateCaption = (id: string, caption: string) => {
-    setTempConfig((prev) => ({
+    updateTempConfig((prev) => ({
       ...prev,
       galleryPhotos: prev.galleryPhotos.map((p) => (p.id === id ? { ...p, caption } : p)),
     }));
@@ -136,6 +211,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleSave = () => {
     onSave(tempConfig);
+    void saveCreatorDraft(tempConfig).catch(() => undefined);
     setSavedBadge(true);
     setTimeout(() => {
       setSavedBadge(false);
@@ -143,7 +219,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleShare = async () => {
-    if (!onShareCurrentConfig || isSharing) return;
+    if (!onShareCurrentConfig || shareInFlightRef.current) return;
     if (shareUrl) {
       try {
         await navigator.clipboard.writeText(shareUrl);
@@ -155,26 +231,66 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
       return;
     }
+    if (!draftReady) return;
+    if (!tempConfig.recipientName.trim() || !tempConfig.senderName.trim() || !/^\d{4,12}$/.test(tempConfig.passcode)) {
+      setShareError('Add both names and a passcode of 4 to 12 digits before creating your link.');
+      return;
+    }
+    if (tempConfig.letterBody.length > 12 || tempConfig.galleryPhotos.length > MAX_GALLERY_PHOTOS) {
+      setShareError('Your surprise has too many letter paragraphs or photos. Please remove some and retry.');
+      return;
+    }
     setShareError('');
     setShareUrl('');
     setShareCopied(false);
+    shareInFlightRef.current = true;
     setIsSharing(true);
+    setShareStage('Preparing photos...');
     try {
-      const result = await onShareCurrentConfig(tempConfig);
+      await saveCreatorDraft(tempConfig);
+      const result = await onShareCurrentConfig(tempConfig, setShareStage);
       onSave(tempConfig);
       setShareUrl(result.url);
       setShareCopied(result.copied);
+      setDraftPublished(true);
+      if (!result.copied) setShareError('Your surprise is saved. Select the link above to copy it manually.');
     } catch (error) {
-      if (error instanceof Error && error.name === 'MediaUploadError') {
-        setShareError('Your image could not be uploaded. Please choose it again and retry.');
+      if (error instanceof Error && error.name === 'OfflineError') {
+        setShareError("You're offline. Your draft is saved. Reconnect and try again.");
+      } else if (error instanceof Error && error.name === 'TimeoutError') {
+        setShareError('This is taking too long. Your draft is saved; check your connection and try again.');
+      } else if (error instanceof Error && error.name === 'NetworkError') {
+        setShareError("We couldn't reach Dearli. Your draft is saved; check your connection and try again.");
+      } else if (error instanceof Error && error.name === 'MediaUploadError') {
+        setShareError("We couldn't upload one of your photos. Please check your connection and try again.");
       } else if (error instanceof Error && error.name === 'PayloadTooLargeError') {
         setShareError('These photos or your audio are too large to send together. Choose fewer or smaller files, then retry.');
+      } else if (error instanceof Error && error.name === 'ValidationError') {
+        setShareError('Some surprise details need attention. Check the names, passcode, and photos, then retry.');
+      } else if (error instanceof Error && error.name === 'DatabaseError') {
+        setShareError("We couldn't save your surprise right now. Your changes are safe; please try again.");
       } else {
-        setShareError('Your surprise could not be created. Please retry.');
+        setShareError("We couldn't save your surprise right now. Your changes are safe; please try again.");
       }
     } finally {
+      shareInFlightRef.current = false;
       setIsSharing(false);
+      setShareStage('');
     }
+  };
+
+  const handleStartOver = async () => {
+    if (!window.confirm('Start over and clear this creator draft?')) return;
+    await clearCreatorDraft();
+    setTempConfig(DEFAULT_CONFIG);
+    setDraftDirty(false);
+    setShareUrl('');
+    setShareCopied(false);
+    setShareError('');
+    setDraftRestored(false);
+    setDraftPhotosMissing(false);
+    setDraftPublished(false);
+    onSave(DEFAULT_CONFIG);
   };
 
   if (!isOpen) return null;
@@ -243,8 +359,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           >
             {onShareCurrentConfig && (
               <div className="sr-only" role="status" aria-live="polite">
-                {isSharing ? 'Creating link' : shareCopied ? 'Link copied' : shareUrl ? 'Link ready' : ''}
+                {isSharing ? shareStage || 'Creating your surprise...' : shareCopied ? 'Link copied' : shareUrl ? 'Link ready' : draftRestored ? 'Draft restored' : ''}
               </div>
+            )}
+            {draftRestored && (
+              <p className="text-xs font-medium text-pink-700" role="status">
+                {draftPhotosMissing ? 'Draft restored. Some photos were unavailable in this browser.' : 'Draft restored'}
+              </p>
             )}
             {shareUrl && (
               <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/60 p-3">
@@ -296,13 +417,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <Upload size={16} /> Change Main Photo
                       </button>
                       <p className="text-xs text-gray-500">
-                        Supports JPG, PNG, WEBP from your phone or device
+                        JPG, PNG, WEBP, or GIF. Up to 20 MB each; photos total 60 MB.
                       </p>
                       <input
                         ref={mainPhotoInputRef}
                         type="file"
                         aria-label="Upload main photo"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         onChange={handleMainPhotoUpload}
                         className="hidden"
                       />
@@ -326,8 +447,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       ref={galleryPhotosInputRef}
                       type="file"
                       aria-label="Add gallery photos"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       multiple
+                      disabled={tempConfig.galleryPhotos.length >= MAX_GALLERY_PHOTOS}
                       onChange={handleGalleryUpload}
                       className="hidden"
                     />
@@ -378,7 +500,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     Clear All Photos
                   </button>
                   <button
-                    onClick={() => setTempConfig((prev) => ({
+                    onClick={() => updateTempConfig((prev) => ({
                       ...prev,
                       galleryPhotos: DEFAULT_CONFIG.galleryPhotos.map((photo) => ({ ...photo })),
                     }))}
@@ -402,7 +524,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Recipient name"
                     value={tempConfig.recipientName}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, recipientName: e.target.value })
+                      updateTempConfig({ ...tempConfig, recipientName: e.target.value })
                     }
                     placeholder="e.g. My Girl, Sarah, Sweetheart"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
@@ -418,7 +540,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Sender name"
                     value={tempConfig.senderName}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, senderName: e.target.value })
+                      updateTempConfig({ ...tempConfig, senderName: e.target.value })
                     }
                     placeholder="e.g. Yours Forever, Alex"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
@@ -435,7 +557,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     maxLength={6}
                     value={tempConfig.passcode}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, passcode: e.target.value })
+                      updateTempConfig({ ...tempConfig, passcode: e.target.value })
                     }
                     placeholder="e.g. 1234 or 2024"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-mono font-bold"
@@ -454,7 +576,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Polaroid caption"
                     value={tempConfig.polaroidText}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, polaroidText: e.target.value })
+                      updateTempConfig({ ...tempConfig, polaroidText: e.target.value })
                     }
                     placeholder="e.g. Happy Birthday ❤️"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
@@ -470,7 +592,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Cake celebration heading"
                     value={tempConfig.cakeCelebrationText}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, cakeCelebrationText: e.target.value })
+                      updateTempConfig({ ...tempConfig, cakeCelebrationText: e.target.value })
                     }
                     placeholder="e.g. Happy Birthday, My Girl! 💖"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
@@ -491,7 +613,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Letter title"
                     value={tempConfig.letterTitle}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, letterTitle: e.target.value })
+                      updateTempConfig({ ...tempConfig, letterTitle: e.target.value })
                     }
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
                   />
@@ -506,7 +628,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Letter greeting"
                     value={tempConfig.letterGreeting}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, letterGreeting: e.target.value })
+                      updateTempConfig({ ...tempConfig, letterGreeting: e.target.value })
                     }
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
                   />
@@ -521,7 +643,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Letter message paragraphs"
                     value={tempConfig.letterBody.join('\n\n')}
                     onChange={(e) =>
-                      setTempConfig({
+                      updateTempConfig({
                         ...tempConfig,
                         letterBody: e.target.value
                           .split('\n\n')
@@ -542,7 +664,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     aria-label="Letter closing"
                     value={tempConfig.letterClosing}
                     onChange={(e) =>
-                      setTempConfig({ ...tempConfig, letterClosing: e.target.value })
+                      updateTempConfig({ ...tempConfig, letterClosing: e.target.value })
                     }
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
                   />
@@ -598,15 +720,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-pink-100 bg-pink-50/40 px-3 py-2.5 sm:flex-nowrap sm:px-6 sm:py-4">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-pink-100 bg-pink-50/40 px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:flex-nowrap sm:px-6 sm:py-4">
             {shareError && <p className="order-first basis-full text-center text-xs font-medium text-rose-600" role="alert">{shareError}</p>}
             {onShareCurrentConfig && (
               <button
                 onClick={handleShare}
-                disabled={isSharing}
+                disabled={isSharing || !draftReady}
                 className="order-first flex min-h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-700 hover:to-rose-600 disabled:opacity-60 sm:order-last sm:w-auto sm:text-sm"
               >
-                {isSharing ? 'Creating link...' : shareCopied ? <><Check size={16} className="mr-1.5" /> Link copied!</> : shareUrl ? 'Copy link' : 'Create link'}
+                {isSharing ? shareStage || 'Creating your surprise...' : shareCopied ? <><Check size={16} className="mr-1.5" /> Link copied!</> : shareUrl ? 'Copy link' : shareError ? 'Try again' : 'Create link'}
               </button>
             )}
             <button
@@ -623,6 +745,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <div className="flex items-center gap-2">
               <button
+                onClick={() => void handleStartOver()}
+                disabled={isSharing}
+                className="min-h-11 rounded-xl px-2 py-2 text-xs font-semibold text-gray-500 transition-colors hover:bg-pink-100/60 hover:text-pink-600 disabled:opacity-50 sm:px-3"
+              >
+                Start over
+              </button>
+              <button
                 onClick={onClose}
                 className="min-h-11 rounded-xl px-2 py-2 text-xs font-semibold text-gray-500 transition-colors hover:text-gray-700 sm:px-4 sm:text-sm"
               >
@@ -630,6 +759,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
               <button
                 onClick={handleSave}
+                disabled={!draftReady}
                 className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-600 hover:to-rose-600 sm:px-6 sm:text-sm"
               >
                 {savedBadge ? <Check size={16} /> : null}

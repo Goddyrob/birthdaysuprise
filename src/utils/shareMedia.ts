@@ -3,6 +3,7 @@ const MAX_ENCODED_IMAGE_BYTES = 3_400_000;
 const REQUEST_HEADROOM_BYTES = 128_000;
 const IMAGE_SIZES = [1600, 1280, 1024, 800, 640];
 const IMAGE_QUALITIES = [0.8, 0.72, 0.64, 0.56, 0.48];
+const SMALL_IMAGE_BYTES = 500_000;
 
 const loadImage = (source: string) => new Promise<HTMLImageElement>((resolve, reject) => {
   const image = new Image();
@@ -27,6 +28,9 @@ const encodeImage = async (source: string, encodedBudget: number) => {
 
   const image = await loadImage(source);
   const original = await fetch(source).then((response) => response.blob());
+  if (original.size <= SMALL_IMAGE_BYTES && Math.max(image.naturalWidth, image.naturalHeight) <= IMAGE_SIZES[0]) {
+    return source;
+  }
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   if (!context) return source;
@@ -50,6 +54,19 @@ const encodeImage = async (source: string, encodedBudget: number) => {
 
   if (!bestBlob || bestBlob.size >= original.size) return source;
   return blobToDataUrl(bestBlob);
+};
+
+const mapWithConcurrency = async <T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>): Promise<R[]> => {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await mapper(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 };
 
 export const prepareConfigForShare = async <T extends {
@@ -77,11 +94,12 @@ export const prepareConfigForShare = async <T extends {
   ));
   const perImageBudget = compressibleCount > 0 ? availableImageBytes / compressibleCount : 0;
 
-  const mainPhoto = await encodeImage(config.mainPhoto, perImageBudget);
-  const galleryPhotos = [];
-  for (const photo of config.galleryPhotos) {
-    galleryPhotos.push({ ...photo, url: await encodeImage(photo.url, perImageBudget) });
-  }
+  const [mainPhoto, ...preparedGallery] = await mapWithConcurrency(
+    imageSources,
+    2,
+    (source) => encodeImage(source, perImageBudget),
+  );
+  const galleryPhotos = config.galleryPhotos.map((photo, index) => ({ ...photo, url: preparedGallery[index] }));
 
   const prepared = { ...config, mainPhoto, galleryPhotos } as T;
   const request = JSON.stringify({ config: prepared });

@@ -5,6 +5,7 @@ import { DEFAULT_CONFIG } from './data/defaultData';
 import { AppConfig, SceneType, ShareResult } from './types';
 import { musicPlayer } from './utils/audio';
 import { prepareConfigForShare } from './utils/shareMedia';
+import { clearCreatorDraft, getCreatorCreationId, loadCreatorDraft } from './utils/creatorDraft';
 import { DeveloperCredit } from './components/DeveloperCredit';
 
 const FloatingHearts = lazy(() => import('./components/FloatingHearts').then((module) => ({ default: module.FloatingHearts })));
@@ -90,6 +91,9 @@ export default function App() {
       } catch (e) {
         // Ignore
       }
+      void loadCreatorDraft().then((draft) => {
+        if (draft) setIsSettingsOpen(true);
+      });
       return;
     }
 
@@ -168,6 +172,15 @@ export default function App() {
 
   const persistLocalConfig = (nextConfig: AppConfig) => {
     const { passcode, ...safeConfig } = nextConfig;
+    safeConfig.mainPhoto = safeConfig.mainPhoto.startsWith('data:') || safeConfig.mainPhoto.startsWith('blob:')
+      ? DEFAULT_CONFIG.mainPhoto
+      : safeConfig.mainPhoto;
+    safeConfig.galleryPhotos = safeConfig.galleryPhotos.filter((photo) =>
+      !photo.url.startsWith('data:') && !photo.url.startsWith('blob:'),
+    );
+    if (safeConfig.customAudioUrl?.startsWith('data:') || safeConfig.customAudioUrl?.startsWith('blob:')) {
+      safeConfig.customAudioUrl = undefined;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(safeConfig));
     } catch (e) {
@@ -181,35 +194,181 @@ export default function App() {
     persistLocalConfig(newConfig);
   };
 
-  const handleShareCurrentConfig = async (configToShare = config): Promise<ShareResult> => {
-    const preparedConfig = await prepareConfigForShare(configToShare);
-    const body = JSON.stringify({ config: preparedConfig });
-    const response = await fetch('/api/surprises', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
+  const handleShareCurrentConfig = async (
+    configToShare = config,
+    onProgress?: (stage: string) => void,
+  ): Promise<ShareResult> => {
+    const requestId = getCreatorCreationId();
+    const startedAt = performance.now();
+    const logStage = (stage: string, stageStartedAt: number, details: Record<string, string | number> = {}) => {
+      console.info(JSON.stringify({
+        event: 'creation_stage',
+        requestId,
+        stage,
+        elapsedMs: Math.round(performance.now() - stageStartedAt),
+        ...details,
+      }));
+    };
 
-    if (!response.ok) {
-      const result = await response.json().catch(() => ({}));
-      const error = new Error(result.error || 'Unable to create shareable surprise');
-      error.name = response.status === 413
-        ? 'PayloadTooLargeError'
-        : result.code === 'MEDIA_UPLOAD_FAILED' ? 'MediaUploadError' : 'SurpriseSaveError';
+    if (!navigator.onLine) {
+      console.warn(JSON.stringify({ event: 'creation_stage', requestId, stage: 'network_preflight', status: 'error', category: 'offline' }));
+      const error = new Error('You are offline');
+      error.name = 'OfflineError';
       throw error;
     }
 
+    const imageCount = 1 + configToShare.galleryPhotos.length;
+    const imageBytes = [configToShare.mainPhoto, ...configToShare.galleryPhotos.map((photo) => photo.url)]
+      .reduce((total, source) => total + (source.startsWith('data:') ? Math.floor(source.length * 0.75) : 0), 0);
+    onProgress?.('Preparing photos...');
+    const preparationStartedAt = performance.now();
+    let preparedConfig: AppConfig;
+    try {
+      preparedConfig = await prepareConfigForShare(configToShare);
+    } catch (error) {
+      console.warn(JSON.stringify({
+        event: 'creation_stage',
+        requestId,
+        stage: 'image_preparation',
+        status: 'error',
+        elapsedMs: Math.round(performance.now() - preparationStartedAt),
+        imageCount,
+        category: error instanceof Error ? error.name : 'preparation_error',
+      }));
+      throw error;
+    }
+    logStage('image_preparation', preparationStartedAt, { imageCount, sourceImageBytes: imageBytes });
+    onProgress?.('Uploading photos...');
+    const mediaFiles = [
+      ...(preparedConfig.mainPhoto.startsWith('data:') ? [{ key: 'main', kind: 'image', dataUrl: preparedConfig.mainPhoto }] : []),
+      ...preparedConfig.galleryPhotos.flatMap((photo, index) => photo.url.startsWith('data:')
+        ? [{ key: `gallery-${index}`, kind: 'image', dataUrl: photo.url }]
+        : []),
+      ...(preparedConfig.customAudioUrl?.startsWith('data:')
+        ? [{ key: 'audio', kind: 'audio', dataUrl: preparedConfig.customAudioUrl }]
+        : []),
+    ];
+    let mediaReferences = new Map<string, string>();
+    if (mediaFiles.length > 0) {
+      const mediaBody = JSON.stringify({ creationId: requestId, files: mediaFiles });
+      const mediaPayloadBytes = new TextEncoder().encode(mediaBody).length;
+      const mediaStartedAt = performance.now();
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 45_000);
+      let mediaResponse: Response;
+      let mediaHttpStatus = 0;
+      try {
+        mediaResponse = await fetch('/api/surprises/media', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId },
+          body: mediaBody,
+          signal: controller.signal,
+        });
+        mediaHttpStatus = mediaResponse.status;
+      } catch {
+        console.warn(JSON.stringify({
+          event: 'creation_stage',
+          requestId,
+          stage: 'media_upload_request',
+          status: 'error',
+          elapsedMs: Math.round(performance.now() - mediaStartedAt),
+          payloadBytes: mediaPayloadBytes,
+          mediaCount: mediaFiles.length,
+          category: controller.signal.aborted ? 'timeout' : 'network_error',
+        }));
+        const error = new Error(controller.signal.aborted ? 'Media upload timed out' : 'Media upload failed');
+        error.name = controller.signal.aborted ? 'TimeoutError' : 'NetworkError';
+        throw error;
+      } finally {
+        window.clearTimeout(timeout);
+        logStage('media_upload_request', mediaStartedAt, { payloadBytes: mediaPayloadBytes, mediaCount: mediaFiles.length, httpStatus: mediaHttpStatus });
+      }
+      if (!mediaResponse.ok) {
+        const result = await mediaResponse.json().catch(() => ({}));
+        console.warn(JSON.stringify({ event: 'creation_stage', requestId, stage: 'media_upload_response', status: 'error', httpStatus: mediaResponse.status, category: result.code || 'media_upload_failed', payloadBytes: mediaPayloadBytes, mediaCount: mediaFiles.length }));
+        const error = new Error('Unable to upload surprise media');
+        error.name = mediaResponse.status === 413 || result.code === 'PAYLOAD_TOO_LARGE'
+          ? 'PayloadTooLargeError'
+          : result.code === 'VALIDATION_FAILED' ? 'ValidationError' : 'MediaUploadError';
+        throw error;
+      }
+      const result = await mediaResponse.json();
+      mediaReferences = new Map((result.media || []).map((file: { key: string; reference: string }) => [file.key, file.reference]));
+    }
+
+    preparedConfig = {
+      ...preparedConfig,
+      mainPhoto: mediaReferences.get('main') || preparedConfig.mainPhoto,
+      galleryPhotos: preparedConfig.galleryPhotos.map((photo, index) => ({
+        ...photo,
+        url: mediaReferences.get(`gallery-${index}`) || photo.url,
+      })),
+      customAudioUrl: mediaReferences.get('audio') || preparedConfig.customAudioUrl,
+    };
+    const body = JSON.stringify({ creationId: requestId, config: preparedConfig });
+    const payloadBytes = new TextEncoder().encode(body).length;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 45_000);
+    const apiStartedAt = performance.now();
+    let response: Response;
+    let apiHttpStatus = 0;
+    try {
+      response = await fetch('/api/surprises', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId },
+        body,
+        signal: controller.signal,
+      });
+      apiHttpStatus = response.status;
+    } catch {
+      console.warn(JSON.stringify({
+        event: 'creation_stage',
+        requestId,
+        stage: 'api_request',
+        status: 'error',
+        elapsedMs: Math.round(performance.now() - apiStartedAt),
+        payloadBytes,
+        mediaCount: mediaFiles.length,
+        category: controller.signal.aborted ? 'timeout' : 'network_error',
+      }));
+      const error = new Error(controller.signal.aborted ? 'Creation request timed out' : 'Creation request failed');
+      error.name = controller.signal.aborted ? 'TimeoutError' : 'NetworkError';
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+      logStage('api_request', apiStartedAt, { payloadBytes, mediaCount: mediaFiles.length, httpStatus: apiHttpStatus });
+    }
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      const error = new Error('Unable to create shareable surprise');
+      error.name = response.status === 413 || result.code === 'PAYLOAD_TOO_LARGE'
+        ? 'PayloadTooLargeError'
+        : result.code === 'MEDIA_UPLOAD_FAILED' ? 'MediaUploadError'
+          : result.code === 'VALIDATION_FAILED' ? 'ValidationError'
+            : result.code === 'SUPABASE_INSERT_FAILED' ? 'DatabaseError'
+              : 'SurpriseSaveError';
+      console.warn(JSON.stringify({ event: 'creation_stage', requestId, stage: 'api_response', status: 'error', httpStatus: response.status, category: result.code || 'api_failure', payloadBytes }));
+      throw error;
+    }
+
+    onProgress?.('Almost ready...');
     const result = await response.json();
     const shareUrl = buildShareableUrl(result.id);
+    logStage('url_available', startedAt, { payloadBytes, imageCount, id: result.id });
+    await clearCreatorDraft();
 
     let copied = false;
+    const clipboardStartedAt = performance.now();
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(shareUrl);
       copied = true;
     } catch {
       copied = false;
+      console.warn(JSON.stringify({ event: 'creation_stage', requestId, stage: 'clipboard', status: 'error', category: 'clipboard_unavailable' }));
     }
+    logStage('clipboard', clipboardStartedAt, { status: copied ? 'ok' : 'error' });
     return { url: shareUrl, copied };
   };
 

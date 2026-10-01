@@ -1,13 +1,22 @@
 import 'dotenv/config';
+import { randomUUID } from 'crypto';
 import express from 'express';
 import {
   createSurprise,
   getSurpriseMetadata,
   isSupabaseConfigured,
+  uploadDraftMedia,
   unlockSurprise,
 } from './supabase.js';
 
 const app = express();
+
+app.use((req, res, next) => {
+  const suppliedId = req.get('x-request-id');
+  req.requestId = suppliedId && /^[0-9a-f-]{36}$/i.test(suppliedId) ? suppliedId : randomUUID();
+  res.set('X-Request-ID', req.requestId);
+  next();
+});
 
 app.use(express.json({ limit: '25mb' }));
 
@@ -30,15 +39,35 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, persistence: isSupabaseConfigured ? 'supabase' : 'unconfigured' });
 });
 
-app.post('/api/surprises', async (req, res) => {
+app.post('/api/surprises/media', async (req, res) => {
+  const startedAt = Date.now();
+  const payloadBytes = Buffer.byteLength(JSON.stringify(req.body || {}), 'utf8');
   try {
-    const result = await createSurprise(req.body?.config);
+    const media = await uploadDraftMedia(req.body?.creationId, req.body?.files, req.requestId);
+    console.info(JSON.stringify({ event: 'creation_stage', requestId: req.requestId, stage: 'media_api', status: 'ok', elapsedMs: Date.now() - startedAt, payloadBytes, mediaCount: media.length }));
+    return res.json({ media });
+  } catch (error) {
+    const status = error.statusCode || 500;
+    console.error(JSON.stringify({ event: 'creation_stage', requestId: req.requestId, stage: 'media_api', status: 'error', httpStatus: status, elapsedMs: Date.now() - startedAt, payloadBytes, mediaCount: req.body?.files?.length || 0, category: error.code || 'media_upload_error' }));
+    return res.status(status).json({
+      code: error.code || 'MEDIA_UPLOAD_FAILED',
+      error: status >= 500 ? 'Unable to upload surprise media' : error.message,
+    });
+  }
+});
+
+app.post('/api/surprises', async (req, res) => {
+  const startedAt = Date.now();
+  const payloadBytes = Buffer.byteLength(JSON.stringify(req.body || {}), 'utf8');
+  try {
+    const result = await createSurprise(req.body?.config, req.requestId, req.body?.creationId);
+    console.info(JSON.stringify({ event: 'creation_stage', requestId: req.requestId, stage: 'api_create', status: 'ok', elapsedMs: Date.now() - startedAt, payloadBytes, imageCount: 1 + (req.body?.config?.galleryPhotos?.length || 0), id: result.id }));
     return res.status(201).json(result);
   } catch (error) {
-    console.error('Create surprise failed:', error.message);
     const status = error.statusCode || 500;
+    console.error(JSON.stringify({ event: 'creation_stage', requestId: req.requestId, stage: 'api_create', status: 'error', httpStatus: status, elapsedMs: Date.now() - startedAt, payloadBytes, category: error.code || (status === 400 ? 'validation_error' : 'create_failed') }));
     return res.status(error.statusCode || 500).json({
-      code: error.code || 'SURPRISE_SAVE_FAILED',
+      code: error.code || (status === 400 ? 'VALIDATION_FAILED' : status === 413 ? 'PAYLOAD_TOO_LARGE' : 'SURPRISE_SAVE_FAILED'),
       error: status >= 500 ? 'Unable to create surprise' : error.message,
     });
   }
@@ -90,6 +119,16 @@ app.post('/api/surprises/:id/unlock', async (req, res) => {
           : error.message;
     return res.status(status).json({ error: message });
   }
+});
+
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = error.status || 400;
+  console.error(JSON.stringify({ event: 'creation_stage', requestId: req.requestId, stage: 'request_parse', status: 'error', httpStatus: status, payloadBytes: Number(req.get('content-length')) || 0, category: error.type || 'request_parse_error' }));
+  return res.status(status).json({
+    code: status === 413 ? 'PAYLOAD_TOO_LARGE' : 'INVALID_REQUEST',
+    error: status === 413 ? 'Request payload is too large' : 'Invalid request',
+  });
 });
 
 export default app;
