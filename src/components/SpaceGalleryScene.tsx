@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { RotateCcw, Plus, Sparkles, Settings, Eye, Heart } from 'lucide-react';
+import { RotateCcw, Plus, Eye } from 'lucide-react';
+import { Sparkles, Settings, Heart } from './DearliIcons';
 import { PhotoItem } from '../types';
 import { PhotoLightbox } from './PhotoLightbox';
 import { DeveloperCredit } from './DeveloperCredit';
@@ -55,7 +56,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
   // Ensure default positions for any added photos
   return (
     <div
-      className="relative flex h-[100dvh] min-h-[100dvh] w-full flex-col justify-between overflow-hidden bg-[#06070e] pb-[env(safe-area-inset-bottom)] text-white select-none"
+      className="dearli-scene dearli-scene--space relative flex h-[100dvh] min-h-[100dvh] w-full flex-col justify-between overflow-hidden bg-[#06070e] pb-[env(safe-area-inset-bottom)] text-white select-none"
     >
       {/* Background Cosmic Starfield */}
       <div className="absolute inset-0 pointer-events-none">
@@ -89,7 +90,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
           className="inline-block"
         >
           <h2 className="font-serif text-xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-pink-200 via-rose-300 to-amber-200 bg-clip-text text-transparent tracking-tight">
-            Our Constellation of Memories ✨
+            Our Constellation of Memories
           </h2>
           <p className="text-[11px] sm:text-sm text-pink-300/80 mt-1 font-medium">
             Tap any star photo to view memories in detail
@@ -137,7 +138,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
       {/* Floating Bottom Control Bar */}
       <footer className="relative z-30 flex flex-wrap items-center justify-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:gap-4 sm:px-4 sm:pb-6">
         {/* Replay Experience Button */}
-        {!isRecipientMode && <motion.button
+        <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onReplay}
@@ -145,7 +146,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
         >
           <RotateCcw size={16} className="text-pink-400" />
           <span>Replay Journey</span>
-        </motion.button>}
+        </motion.button>
 
         {/* Add More Photos Button */}
         {!isRecipientMode && <motion.button
@@ -209,7 +210,7 @@ export const SpaceGalleryScene: React.FC<SpaceGallerySceneProps> = ({
               Create Your Own Surprise
             </button>
           </section>
-          <DeveloperCredit dark />
+
         </>
       )}
 

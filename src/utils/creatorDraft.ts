@@ -1,3 +1,4 @@
+import { clearUploadReceipts } from './uploadReceipts';
 import { AppConfig } from '../types';
 
 const DATABASE_NAME = 'dearli-creator-drafts';
@@ -8,6 +9,7 @@ const MEDIA_KEY = `${DRAFT_KEY}.media`;
 const CREATION_ID_KEY = 'dearli.creatorDraft.creationId.v1';
 let databasePromise: Promise<IDBDatabase> | undefined;
 let lastMediaSignature = '';
+let draftGeneration = 0;
 
 interface DraftMedia {
   mainPhoto?: string;
@@ -115,6 +117,7 @@ export const loadCreatorDraft = async (): Promise<Partial<AppConfig> | null> => 
 };
 
 export const saveCreatorDraft = async (config: AppConfig): Promise<void> => {
+  const generation = draftGeneration;
   const fallback: Partial<AppConfig> = {
     ...config,
     mainPhoto: isLocalMedia(config.mainPhoto) ? '' : config.mainPhoto,
@@ -132,6 +135,7 @@ export const saveCreatorDraft = async (config: AppConfig): Promise<void> => {
 
   if (typeof indexedDB === 'undefined') return;
   const database = await openDraftDatabase();
+  if (generation !== draftGeneration) return;
   const signature = mediaSignature(config);
   const shouldSaveMedia = signature !== lastMediaSignature;
   await new Promise<void>((resolve, reject) => {
@@ -149,13 +153,16 @@ export const saveCreatorDraft = async (config: AppConfig): Promise<void> => {
     transaction.onerror = () => reject(transaction.error);
     transaction.onabort = () => reject(transaction.error);
   });
-  lastMediaSignature = signature;
+  if (generation === draftGeneration) lastMediaSignature = signature;
 };
 
 export const clearCreatorDraft = async (): Promise<void> => {
+  draftGeneration += 1;
+  clearUploadReceipts();
   try {
     localStorage.removeItem(DRAFT_KEY);
     localStorage.removeItem(CREATION_ID_KEY);
+    lastMediaSignature = '';
   } catch {
     // Continue clearing IndexedDB when available.
   }
@@ -166,6 +173,7 @@ export const clearCreatorDraft = async (): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(OBJECT_STORE, 'readwrite');
       transaction.objectStore(OBJECT_STORE).delete(DRAFT_KEY);
+      transaction.objectStore(OBJECT_STORE).delete(MEDIA_KEY);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
     });

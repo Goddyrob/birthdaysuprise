@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Send, Heart, MessageCircle } from 'lucide-react';
+import { X, Send, MessageCircle } from 'lucide-react';
+import { Heart } from './DearliIcons';
 import { useModalAccessibility } from '../utils/useModalAccessibility';
 
 interface LoveNotesModalProps {
@@ -18,10 +19,10 @@ interface Note {
 }
 
 const INITIAL_NOTES: Note[] = [
-  { id: '1', author: 'Your Soulmate ❤️', text: 'You are the most beautiful person inside and out! Happy Birthday!', time: 'Just now', likes: 24 },
-  { id: '2', author: 'Forever Yours 💕', text: 'Can not wait to make a million more memories with you!', time: '2m ago', likes: 18 },
-  { id: '3', author: 'Secret Admirer 🌸', text: 'That smile literally lights up the entire room. Never stop smiling!', time: '10m ago', likes: 42 },
-  { id: '4', author: 'Best Friend 💖', text: 'Wishing you the happiest birthday ever! Love you to the moon and back!', time: '1h ago', likes: 19 },
+  { id: '1', author: 'Your Soulmate ', text: 'You are the most beautiful person inside and out! Happy Birthday!', time: 'Just now', likes: 24 },
+  { id: '2', author: 'Forever Yours ', text: 'Can not wait to make a million more memories with you!', time: '2m ago', likes: 18 },
+  { id: '3', author: 'Secret Admirer ', text: 'That smile literally lights up the entire room. Never stop smiling!', time: '10m ago', likes: 42 },
+  { id: '4', author: 'Best Friend ', text: 'Wishing you the happiest birthday ever! Love you to the moon and back!', time: '1h ago', likes: 19 },
 ];
 
 export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose, recipientName }) => {
@@ -36,7 +37,7 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
 
     const newEntry: Note = {
       id: Date.now().toString(),
-      author: authorName.trim() || 'Love Note 💌',
+      author: authorName.trim() || 'Love Note ',
       text: newComment.trim(),
       time: 'Just now',
       likes: 1,
@@ -95,7 +96,7 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
                   <p className="text-sm text-gray-700 leading-relaxed">{note.text}</p>
                   <div className="mt-2 flex items-center justify-end">
                     <button
-                      onClick={() => handleLike(note.id)}
+                      onClick={() => handleLike(note.id)} aria-label={`Like note by ${note.author}`}
                       className="flex items-center gap-1 text-xs text-pink-600 hover:text-pink-700 active:scale-110 transition-transform"
                     >
                       <Heart size={13} className="fill-pink-500 text-pink-500" />
@@ -126,7 +127,7 @@ export const LoveNotesModal: React.FC<LoveNotesModalProps> = ({ isOpen, onClose,
                   className="min-h-11 min-w-0 flex-1 scroll-mt-4 rounded-xl border border-pink-200 bg-white px-3.5 py-2 text-sm text-gray-800 focus:border-pink-400 focus:outline-none"
                 />
                 <button
-                  type="submit"
+                  type="submit" aria-label="Add note"
                   disabled={!newComment.trim()}
                   className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2 font-medium text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-600 hover:to-rose-600 disabled:opacity-50"
                 >

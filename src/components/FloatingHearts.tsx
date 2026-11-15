@@ -18,7 +18,7 @@ export const FloatingHearts: React.FC<{ count?: number; dark?: boolean }> = ({ c
     const symbols = dark ? ['✨', '⭐', '💫', '✦'] : ['💖', '💕', '🌸', '✨', '💗', '🤍'];
     const colors = dark
       ? ['rgba(255, 255, 255, 0.7)', 'rgba(253, 230, 138, 0.8)', 'rgba(244, 114, 182, 0.6)']
-      : ['#f472b6', '#fb7185', '#fda4af', '#f43f5e', '#ec4899'];
+      : ['#a86473', '#b87a75', '#fda4af', '#8b3f4a', '#884257'];
 
     const items: HeartParticle[] = Array.from({ length: count }, (_, i) => ({
       id: i,

@@ -1,20 +1,9 @@
+import { DeveloperCredit } from './DeveloperCredit';
+import { audioFileError } from '../utils/mediaFiles';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import {
-  X,
-  Upload,
-  Trash2,
-  Plus,
-  RefreshCw,
-  Music,
-  Heart,
-  Image as ImageIcon,
-  Key,
-  Mail,
-  Cake,
-  Check,
-  RotateCcw,
-} from 'lucide-react';
+import { X, Upload, Trash2, Plus, RefreshCw, Cake, Check, RotateCcw,  } from 'lucide-react';
+import { Trash, Music, Heart, Image as ImageIcon, Key, Mail } from './DearliIcons';
 import { DEFAULT_CONFIG } from '../data/defaultData';
 import { AppConfig, PhotoItem, ShareResult } from '../types';
 import { useModalAccessibility } from '../utils/useModalAccessibility';
@@ -52,6 +41,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onReplay,
   onShareCurrentConfig,
 }) => {
+  const [removedPhoto, setRemovedPhoto] = useState<{ photo: PhotoItem; index: number } | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
   const [activeTab, setActiveTab] = useState<'photos' | 'text' | 'letter' | 'audio'>('photos');
   const [tempConfig, setTempConfig] = useState<AppConfig>(config);
   const [savedBadge, setSavedBadge] = useState(false);
@@ -74,6 +65,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const updateTempConfig = (update: React.SetStateAction<AppConfig>) => {
     setDraftDirty(true);
+    setShareUrl(''); setShareCopied(false); setDraftPublished(false); setFieldErrors({});
     setTempConfig(update);
   };
 
@@ -180,8 +172,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (file) {
+      const error = audioFileError(file); if (error) { setShareError(error); return; }
+      setShareError('');
       const reader = new FileReader();
+      reader.onerror = () => setShareError('We could not read that audio. Please choose it again.');
       reader.onload = (ev) => {
         if (ev.target?.result) {
           updateTempConfig((prev) => ({
@@ -196,6 +192,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleRemoveGalleryPhoto = (id: string) => {
+    const index = tempConfig.galleryPhotos.findIndex(photo => photo.id === id);
+    if (index >= 0) setRemovedPhoto({ photo: tempConfig.galleryPhotos[index], index });
     updateTempConfig((prev) => ({
       ...prev,
       galleryPhotos: prev.galleryPhotos.filter((p) => p.id !== id),
@@ -233,7 +231,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
     if (!draftReady) return;
     if (!tempConfig.recipientName.trim() || !tempConfig.senderName.trim() || !/^\d{4,12}$/.test(tempConfig.passcode)) {
-      setShareError('Add both names and a passcode of 4 to 12 digits before creating your link.');
+      setFieldErrors({ recipientName: !tempConfig.recipientName.trim() ? 'Add the recipient’s name.' : '', senderName: !tempConfig.senderName.trim() ? 'Add your signature name.' : '', passcode: !/^\d{4,12}$/.test(tempConfig.passcode) ? 'Choose a passcode of 4 to 12 digits.' : '' });
+      setActiveTab('text');
+      setShareError('Check the highlighted details before creating your link.');
       return;
     }
     if (tempConfig.letterBody.length > 12 || tempConfig.galleryPhotos.length > MAX_GALLERY_PHOTOS) {
@@ -260,7 +260,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       } else if (error instanceof Error && error.name === 'TimeoutError') {
         setShareError('This is taking too long. Your draft is saved; check your connection and try again.');
       } else if (error instanceof Error && error.name === 'NetworkError') {
-        setShareError("We couldn't reach Dearli. Your draft is saved; check your connection and try again.");
+        setShareError("Dearli’s server could not be reached from this app. Your draft is saved. Check your connection and try again; if it continues, the service may need attention.");
       } else if (error instanceof Error && error.name === 'MediaUploadError') {
         setShareError("We couldn't upload one of your photos. Please check your connection and try again.");
       } else if (error instanceof Error && error.name === 'PayloadTooLargeError') {
@@ -281,6 +281,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleStartOver = async () => {
     if (!window.confirm('Start over and clear this creator draft?')) return;
+    setDraftDirty(false);
     await clearCreatorDraft();
     setTempConfig(DEFAULT_CONFIG);
     setDraftDirty(false);
@@ -313,7 +314,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500 fill-pink-500" />
               <h2 id="settings-title" className="font-serif text-xl sm:text-2xl font-bold text-gray-800">
-                Customize experience
+                Your surprise
               </h2>
             </div>
             <button
@@ -326,15 +327,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-pink-100 bg-pink-50/40 px-3 sm:gap-4 sm:px-6">
+          <div className="creator-tabs" role="tablist" aria-label="Personalize your surprise">
             {[
               { id: 'photos', label: 'Photos', icon: ImageIcon },
-              { id: 'text', label: 'Names & Passcode', icon: Key },
-              { id: 'letter', label: 'Love Letter', icon: Mail },
-              { id: 'audio', label: 'Music', icon: Music },
+              { id: 'text', label: 'Details', icon: Key },
+              { id: 'letter', label: 'Letter', icon: Mail },
+              { id: 'audio', label: 'Sound', icon: Music },
             ].map((tab) => (
               <button
-                key={tab.id}
+                key={tab.id} role="tab" aria-label={tab.label} aria-selected={activeTab === tab.id} aria-controls="creator-panel" id={`tab-${tab.id}`} onKeyDown={(event) => { const tabs = Array.from((event.currentTarget as HTMLButtonElement).parentElement!.querySelectorAll<HTMLButtonElement>('[role=tab]')); const index = tabs.indexOf(event.currentTarget); if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const next = tabs[(index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]; next.click(); next.focus(); } }}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-2.5 text-xs font-semibold transition-all sm:px-4 sm:py-3 sm:text-sm ${
                   activeTab === tab.id
@@ -349,7 +350,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* Tab Content Body */}
-          <div
+          <div id="creator-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`}
             onFocusCapture={(event) => {
               const target = event.target;
               if (!(target instanceof HTMLElement) || !target.matches('input, textarea')) return;
@@ -393,13 +394,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               </div>
             )}
+            <p className="creator-intro">Choose your memories, add both names and a private passcode, then create a link. Save a draft to return later.</p>
             {/* TAB 1: PHOTOS */}
             {activeTab === 'photos' && (
               <div className="space-y-6">
                 {/* Main Polaroid Photo */}
                 <div>
                   <label className="block text-sm font-bold text-gray-800 mb-2">
-                    Main Polaroid Photo (Landing Scene)
+                    Cover photo
                   </label>
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-24 rounded-lg overflow-hidden border-2 border-pink-300 shadow-md bg-gray-100 flex-shrink-0">
@@ -435,13 +437,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-bold text-gray-800">
-                      3D Space Gallery Photos ({tempConfig.galleryPhotos.length})
+                      Memory gallery ({tempConfig.galleryPhotos.length})
                     </label>
                     <button
                       onClick={() => galleryPhotosInputRef.current?.click()}
                       className="px-3 py-1.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer"
                     >
-                      <Plus size={14} /> Add Multiple Photos
+                      <Plus size={14} /> Add photos
                     </button>
                     <input
                       ref={galleryPhotosInputRef}
@@ -455,9 +457,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                   </div>
 
+                  {removedPhoto && <div className="photo-undo" role="status"><span>Photo removed.</span><button type="button" onClick={() => { updateTempConfig(prev => { const photos = [...prev.galleryPhotos]; photos.splice(Math.min(removedPhoto.index, photos.length), 0, removedPhoto.photo); return { ...prev, galleryPhotos: photos }; }); setRemovedPhoto(null); }}>Undo</button></div>}
                   {/* Photos Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {tempConfig.galleryPhotos.map((photo) => (
+                  <div className="creator-photo-grid">
+                    {tempConfig.galleryPhotos.map((photo, photoIndex) => (
                       <div
                         key={photo.id}
                         className="relative group rounded-xl overflow-hidden border border-pink-200 bg-pink-50/50 p-2 flex flex-col gap-2"
@@ -472,19 +475,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           />
                           <button
                             onClick={() => handleRemoveGalleryPhoto(photo.id)}
-                            className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-md transition-colors"
+                            className="dearli-icon-button photo-remove"
+                            aria-label={`Remove photo ${photoIndex + 1}`} disabled={isSharing}
                             title="Remove Photo"
                           >
-                            <Trash2 size={13} />
+                            <Trash size={20} />
                           </button>
                         </div>
-                        <input
-                          type="text"
-                            aria-label={`Caption for ${photo.caption || 'gallery photo'}`}
+                        <textarea
+                          rows={3}
+                          maxLength={2048}
+                          aria-label={`Caption for photo ${photoIndex + 1}`}
                           value={photo.caption}
                           placeholder="Caption..."
                           onChange={(e) => handleUpdateCaption(photo.id, e.target.value)}
-                          className="w-full text-[11px] px-2 py-1 bg-white rounded border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800"
+                          className="photo-caption"
                         />
                       </div>
                     ))}
@@ -494,16 +499,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Clear / Reset buttons */}
                 <div className="pt-4 border-t border-pink-100 flex flex-wrap gap-2 justify-between">
                   <button
-                    onClick={onClearPhotos}
+                    onClick={() => { if (window.confirm('Remove all gallery photos from this draft?')) { updateTempConfig(prev => ({ ...prev, galleryPhotos: [] })); setRemovedPhoto(null); } }}
                     className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
                   >
                     Clear All Photos
                   </button>
                   <button
-                    onClick={() => updateTempConfig((prev) => ({
-                      ...prev,
-                      galleryPhotos: DEFAULT_CONFIG.galleryPhotos.map((photo) => ({ ...photo })),
-                    }))}
+                    onClick={() => { if (window.confirm('Replace this gallery with the sample photos?')) updateTempConfig(prev => ({ ...prev, galleryPhotos: DEFAULT_CONFIG.galleryPhotos.map(photo => ({ ...photo })) })); }}
                     className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors flex items-center gap-1"
                   >
                     <RefreshCw size={13} /> Reset Demo Photos
@@ -521,7 +523,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    aria-label="Recipient name"
+                    aria-label="Recipient name" aria-required="true" aria-invalid={Boolean(fieldErrors.recipientName)} aria-describedby="error-recipientName"
                     value={tempConfig.recipientName}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, recipientName: e.target.value })
@@ -529,6 +531,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     placeholder="e.g. My Girl, Sarah, Sweetheart"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
                   />
+                  {fieldErrors.recipientName && <p id="error-recipientName" className="field-error">{fieldErrors.recipientName}</p>}
                 </div>
 
                 <div>
@@ -537,7 +540,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    aria-label="Sender name"
+                    aria-label="Sender name" aria-required="true" aria-invalid={Boolean(fieldErrors.senderName)} aria-describedby="error-senderName"
                     value={tempConfig.senderName}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, senderName: e.target.value })
@@ -545,16 +548,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     placeholder="e.g. Yours Forever, Alex"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
                   />
+                  {fieldErrors.senderName && <p id="error-senderName" className="field-error">{fieldErrors.senderName}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Passcode (4 Digits)
+                    Private passcode · 4–12 digits
                   </label>
                   <input
                     type="text"
-                    aria-label="Passcode"
-                    maxLength={6}
+                    aria-label="Passcode" aria-required="true" aria-invalid={Boolean(fieldErrors.passcode)} aria-describedby="error-passcode"
+                    maxLength={12}
+                    inputMode="numeric"
+                    pattern="[0-9]{4,12}"
                     value={tempConfig.passcode}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, passcode: e.target.value })
@@ -562,14 +568,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     placeholder="e.g. 1234 or 2024"
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-mono font-bold"
                   />
+                  {fieldErrors.passcode && <p id="error-passcode" className="field-error">{fieldErrors.passcode}</p>}
                   <span className="text-[11px] text-gray-500 mt-1 block">
-                    Tip: Enter any 4 numbers (default is 1234).
+                    Choose 4–12 digits. Share the passcode separately from the link.
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Polaroid Bottom Caption
+                    Photo caption
                   </label>
                   <input
                     type="text"
@@ -636,7 +643,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Letter Message Paragraphs (One per line)
+                    Letter message · separate paragraphs with a blank line
                   </label>
                   <textarea
                     rows={6}
@@ -646,8 +653,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       updateTempConfig({
                         ...tempConfig,
                         letterBody: e.target.value
-                          .split('\n\n')
-                          .filter((p) => p.trim() !== ''),
+                          .split('\n\n'),
                       })
                     }
                     placeholder="Write your beautiful love message here..."
@@ -703,7 +709,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       aria-label="Upload background music"
                       className="px-3.5 py-2 bg-white hover:bg-pink-100 text-pink-700 text-xs font-semibold rounded-xl border border-pink-300 transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
-                      <Upload size={15} /> Upload MP3
+                      <Upload size={15} /> Choose audio
                     </button>
                     <input
                       ref={audioInputRef}
@@ -717,10 +723,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
+            <DeveloperCredit />
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-pink-100 bg-pink-50/40 px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:flex-nowrap sm:px-6 sm:py-4">
+          <div className="creator-actions">
             {shareError && <p className="order-first basis-full text-center text-xs font-medium text-rose-600" role="alert">{shareError}</p>}
             {onShareCurrentConfig && (
               <button
@@ -728,22 +735,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 disabled={isSharing || !draftReady}
                 className="order-first flex min-h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-700 hover:to-rose-600 disabled:opacity-60 sm:order-last sm:w-auto sm:text-sm"
               >
-                {isSharing ? shareStage || 'Creating your surprise...' : shareCopied ? <><Check size={16} className="mr-1.5" /> Link copied!</> : shareUrl ? 'Copy link' : shareError ? 'Try again' : 'Create link'}
+                {isSharing ? shareStage || 'Creating your surprise...' : shareCopied ? <><Check size={16} className="mr-1.5" /> Link copied!</> : shareUrl ? 'Copy link' : shareError ? 'Try again' : 'Create private link'}
               </button>
             )}
-            <button
-              onClick={() => {
-                onClose();
-                onReplay();
-              }}
-              aria-label="Replay journey"
-              className="flex min-h-11 items-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold text-gray-600 transition-colors hover:bg-pink-100/60 hover:text-pink-600 sm:px-4 sm:text-sm"
-            >
-              <RotateCcw size={14} />
-              <span className="max-[390px]:hidden sm:inline">Replay Journey</span>
-            </button>
 
-            <div className="flex items-center gap-2">
+
+            <div className="creator-secondary-actions">
               <button
                 onClick={() => void handleStartOver()}
                 disabled={isSharing}
@@ -759,11 +756,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
               <button
                 onClick={handleSave}
-                disabled={!draftReady}
-                className="flex min-h-11 items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/20 transition-all hover:from-pink-600 hover:to-rose-600 sm:px-6 sm:text-sm"
+                disabled={!draftReady || isSharing}
+                className="draft-save"
               >
                 {savedBadge ? <Check size={16} /> : null}
-                <span>{savedBadge ? 'Saved' : 'Save changes'}</span>
+                <span>{savedBadge ? 'Saved' : 'Save draft'}</span>
               </button>
             </div>
           </div>
