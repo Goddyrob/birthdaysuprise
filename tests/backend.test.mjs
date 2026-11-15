@@ -31,10 +31,10 @@ const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listeni
 after(()=>{server.closeAllConnections();server.close();stub.closeAllConnections();stub.close()});
 const origin=`http://127.0.0.1:${server.address().port}`;
 const request=(url,body,headers={})=>fetch(origin+url,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...headers},body:body===undefined?undefined:JSON.stringify(body)});
-const config=()=>({recipientName:'Dearli QA recipient',senderName:'QA sender',mainPhoto:'data:image/png;base64,iVBORw0KGgo=',passcode:'12345678',cakeHeading:'Cut the cake',cakeCelebrationText:'A little celebration',letterTitle:'QA letter',letterGreeting:'Hello',letterBody:['ISOLATED TEST CONTENT ONLY — a personal verification letter'],letterClosing:'With care',galleryPhotos:[],polaroidText:'QA',musicTitle:'QA'});
+const config=()=>({recipientName:'Dearli QA recipient',senderName:'QA sender',sealColor:'wine',mainPhoto:'data:image/png;base64,iVBORw0KGgo=',passcode:'12345678',cakeHeading:'Cut the cake',cakeCelebrationText:'A little celebration',letterTitle:'QA letter',letterGreeting:'Hello',letterBody:['ISOLATED TEST CONTENT ONLY — a personal verification letter'],letterClosing:'With care',galleryPhotos:[],polaroidText:'QA',musicTitle:'QA'});
 const png='data:image/png;base64,iVBORw0KGgo=';
-test('optional seal colors validate without making customization mandatory',()=>{
- assert.doesNotThrow(()=>validateConfig(config()));
+test('envelope selection requires a valid color while free wine remains available',()=>{
+ assert.throws(()=>validateConfig({...config(),sealColor:undefined}),{statusCode:400});
  for(const sealColor of ['wine','sage','gold'])assert.doesNotThrow(()=>validateConfig({...config(),sealColor}));
  for(const sealColor of ['red',{},17])assert.throws(()=>validateConfig({...config(),sealColor}),{statusCode:400});
 });

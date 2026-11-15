@@ -14,7 +14,7 @@ Shared policy: `shared/creationValidation.js`. Applied before frontend upload an
 - Passcode: 4–12 digits. A fresh creator starts with an empty passcode.
 - At least one creator-selected image: supported local image data or an owned persisted storage reference. Bundled illustrations and arbitrary remote demo URLs do not satisfy this check. Existing storage-ownership validation still applies.
 - Letter: title, greeting and closing, plus an original message with at least 20 non-space characters, at most 12 paragraphs. Known sample paragraphs do not count toward completion. This length rule is a practical completion check, not a semantic assessment of sentiment.
-- Music, photo captions and seal colors remain optional. Existing decorative scene defaults remain valid.
+- An explicit envelope-color choice is required for new links: Wine is always free; earned extra colors are optional. Music and photo captions remain optional. Existing decorative scene defaults remain valid.
 
 When only gallery images are supplied, the first personal image becomes the submitted cover without replacing the local draft. Valid local inputs can begin submission; media upload happens next, then persistence, then the link is shown. Upload receipts and stable creation IDs retain retry/idempotency behavior. Required-content errors retain work, select the relevant tab and focus the first invalid control. Old drafts can still reopen; incomplete/sample drafts must be personalized before creating a new link. Existing links are not revalidated.
 

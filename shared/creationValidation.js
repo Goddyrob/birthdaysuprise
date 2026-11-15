@@ -33,12 +33,13 @@ export function creationErrors(config) {
   errors.letterBody = 'Write a personal message of at least 20 non-space characters, in up to 12 paragraphs. Replace the sample letter.';
  for (const [field,label] of [['letterTitle','letter title'],['letterGreeting','greeting'],['letterClosing','closing']])
   if (!text(config?.[field]) || text(config?.[field]).length > 4000) errors[field] = `Add a ${label}.`;
+ if (!['wine','sage','gold'].includes(config?.sealColor)) errors.sealColor = 'Choose an envelope style. Wine is free; extra colors use an optional rewarded ad.';
  return errors;
 }
 export function creationChecklist(config) {
  const errors = creationErrors(config);
  return {details:!['recipientName','senderName','passcode'].some(k=>errors[k]), photo:!errors.mainPhoto,
-  letter:!['letterTitle','letterGreeting','letterBody','letterClosing'].some(k=>errors[k])};
+  letter:!['letterTitle','letterGreeting','letterBody','letterClosing'].some(k=>errors[k]),envelope:!errors.sealColor};
 }
 export function withCreatorCover(config) {
  if (!config || isCreatorPhoto(config.mainPhoto)) return config;

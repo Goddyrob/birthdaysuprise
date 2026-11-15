@@ -622,6 +622,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {activeTab === 'letter' && (
               <div className="space-y-4">
                 <CreatorReward color={tempConfig.sealColor} onColor={sealColor => updateTempConfig(prev => ({ ...prev, sealColor }))} />
+                <FieldError name="sealColor" errors={fieldErrors}/>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                     Letter Title

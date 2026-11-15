@@ -7,7 +7,7 @@ Integration reviewed against official Google and Capacitor documentation on 15 N
 - Capacitor 8.6.2 local Android plugin (`DearliAdsPlugin`), registered by `MainActivity`.
 - Google GMA Next-Gen SDK 1.6.0 and UMP 4.0.0. Existing Gradle 8.14.3, AGP 8.13.0, JDK 21, min SDK 24 and compile/target SDK 36 are retained.
 - `android/admob.properties` is the central build configuration. Debug uses Google's sample App ID and rewarded unit; release binds the owner's production IDs. IDs cannot be supplied by the web layer. Never install or use a release build for ad development/testing.
-- Exactly one placement: an adult creator can opt to complete a rewarded ad to unlock sage and antique-gold envelope seals on that device. Wine remains free. No banner, interstitial, app-open or receiver placement exists. No preloader/mediation adapters are configured.
+- Exactly one placement: an adult creator can opt to complete a rewarded ad to unlock sage and antique-gold envelope seals on that device. Wine remains free. New links require an explicit envelope-style choice, including the free Wine option; they never require watching an ad. No banner, interstitial, app-open or receiver placement exists. No preloader/mediation adapters are configured.
 - Native `OnUserEarnedRewardListener` alone persists the cosmetic entitlement. Native sessions prevent duplicate credit; dismiss/fail/cancel/timeout callbacks cannot grant it. The reward is local, non-monetary and non-transferable. Server-side reward verification is not configured or needed for this local cosmetic; do not reuse this mechanism for balances or paid goods.
 - Existing drafts, submission, sharing, media and receiver journeys have no ad dependency.
 

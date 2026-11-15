@@ -4,7 +4,7 @@ import { hasNativeAds, nativeAds, RewardRequest, SEAL_COLORS, unavailableAds } f
 import type { SealColor } from '../utils/ads';
 import { musicPlayer } from '../utils/audio';
 
-export function CreatorReward({ color = 'wine', onColor }: { color?: SealColor; onColor: (color: SealColor) => void }) {
+export function CreatorReward({ color, onColor }: { color?: SealColor; onColor: (color: SealColor) => void }) {
   const [status, setStatus] = useState(unavailableAds);
   const [adult, setAdult] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -13,6 +13,7 @@ export function CreatorReward({ color = 'wine', onColor }: { color?: SealColor; 
   const runner = useRef(new RewardRequest(nativeAds));
   const ownsRequest = useRef(false);
   const alive = useRef(true);
+  const intendedColor = useRef<SealColor | null>(null);
   useEffect(() => {
     alive.current = true;
     if (!hasNativeAds()) return;
@@ -20,12 +21,11 @@ export function CreatorReward({ color = 'wine', onColor }: { color?: SealColor; 
     const handles: PluginListenerHandle[] = [];
     const track = async (promise: Promise<PluginListenerHandle>) => { const h = await promise; if (live && alive.current) handles.push(h); else void h.remove(); };
     void nativeAds.getStatus().then(s => { if (alive.current) setStatus(s); }).catch(() => {});
-    void track(nativeAds.addListener('rewardEarned', s => { if (alive.current) setStatus(s); }));
+    void track(nativeAds.addListener('rewardEarned', s => { if (alive.current) {setStatus(s);if(s.unlocked && intendedColor.current){onColor(intendedColor.current);intendedColor.current=null;}} }));
     void track(nativeAds.addListener('consentChanged', s => { if (alive.current) setStatus(s); }));
     void track(nativeAds.addListener('adState', s => { if (alive.current) setPhase(s.phase); }));
     return () => { live = false; alive.current = false; for (const h of handles) void h.remove(); if (ownsRequest.current) void nativeAds.cancelReward().catch(() => {}); };
   }, []);
-  if (!hasNativeAds()) return null;
   const watch = async () => {
     if (ownsRequest.current || busy || !adult || status.unlocked) return;
     ownsRequest.current = true; setBusy(true); setMessage('');
@@ -35,17 +35,18 @@ export function CreatorReward({ color = 'wine', onColor }: { color?: SealColor; 
       const result = await runner.current.run(adult);
       if (!alive.current || !result) return;
       setStatus(result);
+      if(result.earned && intendedColor.current){onColor(intendedColor.current);intendedColor.current=null;}
       setMessage(result.earned ? 'Sage and antique gold seals are unlocked on this device.' : result.reason === 'offline' ? 'You’re offline. You can keep creating and save a draft; try the optional ad when you reconnect.' : result.reason === 'dismissed' || result.reason === 'cancelled' ? 'No reward was earned. Your surprise and draft are unchanged.' : result.reason === 'consent_unavailable' ? 'Ad consent could not be completed. You can keep creating without an ad.' : result.reason === 'already_unlocked' ? 'Your extra seal colors are already unlocked.' : 'The optional ad is unavailable. You can keep creating and try again later.');
     } catch { if (alive.current) setMessage('The optional ad is unavailable. Your draft is safe; keep creating.'); }
     finally { ownsRequest.current = false; if (alive.current) { setBusy(false); setPhase(''); } }
   };
   return <section className="creator-reward" aria-labelledby="seal-title">
     <h3 id="seal-title">Envelope seal</h3>
-    <p>The wine seal is always included. For an extra finishing touch, complete one optional rewarded ad to unlock sage and antique gold seals on this device.</p>
+    <p>Choose a finishing touch before creating your link. Wine is free. {hasNativeAds() ? 'Sage and antique gold are optional extras: complete one rewarded ad to unlock both on this device.' : 'Extra rewarded colors are available in the Android app. You can create and share here with Wine.'}</p>
     <div className="seal-choices" role="group" aria-label="Envelope seal color">
-      {(Object.keys(SEAL_COLORS) as SealColor[]).map(value => <button type="button" key={value} aria-pressed={color === value} disabled={busy || (value !== 'wine' && !status.unlocked)} onClick={() => onColor(value)}><span className="seal-swatch" style={{ background: SEAL_COLORS[value] }} aria-hidden="true"/>{value === 'gold' ? 'Antique gold' : value[0].toUpperCase() + value.slice(1)}</button>)}
+      {(Object.keys(SEAL_COLORS) as SealColor[]).map(value => <button type="button" key={value} data-creation-field={value==='wine'?'sealColor':undefined} aria-label={value==='gold'?'Antique gold':value[0].toUpperCase()+value.slice(1)} aria-pressed={color === value} disabled={(busy && value!=='wine') || (!hasNativeAds() && value !== 'wine' && !status.unlocked && color!==value)} onClick={() => {if(value==='wine'||status.unlocked||color===value){intendedColor.current=null;if(value==='wine' && ownsRequest.current)void nativeAds.cancelReward().catch(()=>{});onColor(value);setMessage('');}else{intendedColor.current=value;setMessage('To choose this extra color, confirm you’re 18 or older and complete the optional rewarded ad below. Wine is available free at any time.');}}}><span className="seal-swatch" style={{ background: SEAL_COLORS[value] }} aria-hidden="true"/>{value === 'gold' ? 'Antique gold' : value[0].toUpperCase() + value.slice(1)}{value==='wine'&&<small aria-hidden="true">Free</small>}{value!=='wine'&&!status.unlocked&&color!==value&&<small aria-hidden="true">{hasNativeAds()?'Optional ad':'Android'}</small>}</button>)}
     </div>
-    {!status.unlocked && <>
+    {hasNativeAds() && !status.unlocked && <>
       <label className="ad-adult-confirm"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} disabled={busy}/>I’m 18 or older and want to use optional rewarded ads.</label>
       <button className="reward-watch" type="button" disabled={!adult || busy || status.busy} onClick={() => void watch()}>{busy ? phase === 'showing' ? 'Ad is showing…' : 'Preparing optional ad…' : status.testMode ? 'Watch a test ad to unlock seal colors' : 'Watch an ad to unlock seal colors'}</button>
       {busy && phase !== 'showing' && <button type="button" className="reward-cancel" onClick={() => void nativeAds.cancelReward()}>Cancel ad request</button>}
