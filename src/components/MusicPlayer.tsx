@@ -1,5 +1,7 @@
+import { audioFileError } from '../utils/mediaFiles';
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Music, Upload, Play, Pause } from 'lucide-react';
+import { Volume2, VolumeX, Upload, Play, Pause } from 'lucide-react';
+import { Music } from './DearliIcons';
 import { musicPlayer } from '../utils/audio';
 
 interface MusicPlayerProps {
@@ -10,11 +12,12 @@ interface MusicPlayerProps {
 }
 
 export const MusicPlayer: React.FC<MusicPlayerProps> = ({
-  customMusicTitle = 'Romantic Melody 🎵',
+  customMusicTitle = 'Romantic Melody ',
   onUploadCustomMusic,
   dark = false,
   canUpload = true,
 }) => {
+  const [fileError, setFileError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.35);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -45,7 +48,10 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (file && onUploadCustomMusic) {
+      const error = audioFileError(file); if (error) { setFileError(error); return; }
+      setFileError('');
       onUploadCustomMusic(file);
       setIsPlaying(true);
     }
@@ -60,6 +66,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             : 'bg-white/80 border border-pink-200 text-pink-900'
         }`}
       >
+        {fileError && <p role="alert" className="absolute left-0 top-full mt-2 w-64 border border-pink-200 bg-white p-3 text-xs text-rose-600">{fileError}</p>}
         {/* Play/Pause Button */}
         <button
           onClick={handleToggle}

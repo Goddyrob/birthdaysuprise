@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Heart, MessageCircle, Repeat, Camera, Sparkles, Settings, KeyRound, Gift } from 'lucide-react';
+import { MessageCircle, Repeat, KeyRound } from 'lucide-react';
+import { Heart, Camera, Sparkles, Settings, Gift } from './DearliIcons';
 import { playKeySound, playPasscodeSuccessSound } from '../utils/audio';
 import confetti from 'canvas-confetti';
 import { AppConfig, ShareResult } from '../types';
@@ -52,7 +53,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
   const [pendingSuccess, setPendingSuccess] = useState(false);
   const [floatingHearts, setFloatingHearts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [imageFailed, setImageFailed] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -96,11 +97,11 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
         const isValid = onUnlock ? await onUnlock(code) : code === passcode || passcode === '';
         if (isValid) {
           playPasscodeSuccessSound();
-          confetti({
+          confetti({ disableForReducedMotion: true,
             particleCount: 80,
             spread: 70,
             origin: { y: 0.6 },
-            colors: ['#ec4899', '#f43f5e', '#fda4af', '#fcd34d']
+            colors: ['#884257', '#8b3f4a', '#fda4af', '#fcd34d']
           });
           setPendingSuccess(true);
           return;
@@ -165,7 +166,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
   };
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full items-start justify-center overflow-y-auto bg-gradient-to-br from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] px-3 pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.75rem))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:items-center lg:p-8">
+    <div className="dearli-scene dearli-scene--landing relative flex min-h-[100dvh] w-full items-start justify-center overflow-y-auto bg-gradient-to-br from-[#f7f1e6] via-[#efe5d5] to-[#e9ddc9] px-3 pt-[max(3.5rem,calc(env(safe-area-inset-top)+2.75rem))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 lg:items-center lg:p-8">
       {/* Background Soft Glow Orbs */}
       <div className="pointer-events-none absolute left-1/4 top-1/4 hidden h-96 w-96 rounded-full bg-pink-300/30 blur-3xl sm:block" />
       <div className="pointer-events-none absolute bottom-1/4 right-1/4 hidden h-96 w-96 rounded-full bg-rose-200/40 blur-3xl sm:block" />
@@ -186,7 +187,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
         </motion.h1>
 
         <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-2 md:gap-8 lg:grid-cols-12 lg:gap-12">
-          
+
           {/* LEFT SIDE: Large Polaroid Photo with Pink Ribbon */}
           <div className="col-span-1 flex flex-col items-center justify-center min-[360px]:col-span-1 lg:col-span-6">
             <motion.div
@@ -198,18 +199,18 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
               <div className="pointer-events-none absolute -left-2 -top-2 z-20 h-10 w-10 select-none drop-shadow-md sm:-left-4 sm:-top-4 sm:h-16 sm:w-16">
                 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                   {/* Left Loop */}
-                  <path d="M50 45 C30 15, 10 30, 25 50 C35 60, 48 48, 50 45 Z" fill="#f472b6" />
-                  <path d="M48 44 C32 22, 18 34, 28 48 C36 54, 46 47, 48 44 Z" fill="#ec4899" opacity="0.4" />
+                  <path d="M50 45 C30 15, 10 30, 25 50 C35 60, 48 48, 50 45 Z" fill="#a86473" />
+                  <path d="M48 44 C32 22, 18 34, 28 48 C36 54, 46 47, 48 44 Z" fill="#884257" opacity="0.4" />
                   {/* Right Loop */}
-                  <path d="M50 45 C70 15, 90 30, 75 50 C65 60, 52 48, 50 45 Z" fill="#f472b6" />
-                  <path d="M52 44 C68 22, 82 34, 72 48 C64 54, 54 47, 52 44 Z" fill="#ec4899" opacity="0.4" />
+                  <path d="M50 45 C70 15, 90 30, 75 50 C65 60, 52 48, 50 45 Z" fill="#a86473" />
+                  <path d="M52 44 C68 22, 82 34, 72 48 C64 54, 54 47, 52 44 Z" fill="#884257" opacity="0.4" />
                   {/* Left Ribbon Tail */}
-                  <path d="M46 50 Q30 75 18 85 Q28 80 38 88 Q44 65 48 52 Z" fill="#fb7185" />
+                  <path d="M46 50 Q30 75 18 85 Q28 80 38 88 Q44 65 48 52 Z" fill="#b87a75" />
                   {/* Right Ribbon Tail */}
-                  <path d="M54 50 Q70 75 82 85 Q72 80 62 88 Q56 65 52 52 Z" fill="#fb7185" />
+                  <path d="M54 50 Q70 75 82 85 Q72 80 62 88 Q56 65 52 52 Z" fill="#b87a75" />
                   {/* Center Knot */}
-                  <ellipse cx="50" cy="46" rx="8" ry="7" fill="#db2777" />
-                  <ellipse cx="49" cy="45" rx="5" ry="4" fill="#f472b6" />
+                  <ellipse cx="50" cy="46" rx="8" ry="7" fill="#722d40" />
+                  <ellipse cx="49" cy="45" rx="5" ry="4" fill="#a86473" />
                 </svg>
               </div>
 
@@ -318,8 +319,8 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
             <div className="grid w-full max-w-[220px] grid-cols-3 gap-1.5 max-[359px]:gap-0.5 sm:max-w-[320px] sm:gap-4">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '10'].map((val) => {
                 const isBack = val === '*' || val === '10';
-                const label = val === '10' ? '⌫' : val === '*' ? '♥' : val;
-                
+                const label = val === '10' ? '⌫' : val === '*' ? '' : val;
+
                 return (
                   <motion.button
                     key={val}
@@ -364,14 +365,14 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
 
           {/* RIGHT RAIL: TikTok / Instagram Style Interactive Action Bar (Matching Reference Video) */}
           {!isRecipientMode && !isLocked && <div className="col-span-full flex w-full flex-row items-center justify-around gap-1 border-t border-pink-200/60 pt-2 lg:col-span-1 lg:flex-col lg:gap-8 lg:border-l lg:border-t-0 lg:pt-0 lg:pl-6">
-            
+
             {/* Heart Likes Button */}
             <div className="flex flex-col items-center">
               <motion.button
                 whileTap={{ scale: 1.25 }}
                 onClick={handleLikeClick}
                 className="p-3 rounded-full bg-white/90 shadow-lg text-pink-500 hover:bg-pink-50 transition-colors border border-pink-100 cursor-pointer"
-                title="Give love"
+                title="Give love" aria-label="Give love"
               >
                 <Heart
                   size={24}
@@ -390,7 +391,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 whileTap={{ scale: 0.92 }}
                 onClick={onOpenLoveReasons}
                 className="p-3 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 shadow-lg text-white hover:from-pink-600 hover:to-rose-600 transition-all border border-pink-300 cursor-pointer"
-                title="Why I Love You"
+                title="Why I Love You" aria-label="Love reasons"
               >
                 <Gift size={22} className="text-white" />
               </motion.button>
@@ -404,7 +405,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 whileTap={{ scale: 0.92 }}
                 onClick={onOpenNotes}
                 className="p-3 rounded-full bg-white/90 shadow-lg text-pink-500 hover:bg-pink-50 transition-colors border border-pink-100"
-                title="Read sweet wishes"
+                title="Read sweet wishes" aria-label="Read notes"
               >
                 <MessageCircle size={24} className="text-pink-500" />
               </motion.button>
@@ -418,7 +419,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 whileTap={{ scale: 0.92 }}
                 onClick={handleShareClick}
                 className="p-3 rounded-full bg-white/90 shadow-lg text-pink-500 hover:bg-pink-50 transition-colors border border-pink-100"
-                title="Share link"
+                title="Share link" aria-label="Share link"
               >
                 <Repeat size={24} className="text-pink-500" />
               </motion.button>
@@ -432,7 +433,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
                 whileTap={{ scale: 0.92 }}
                 onClick={onOpenSettings}
                 className="p-3 rounded-full bg-pink-100/80 shadow-md text-pink-600 hover:bg-pink-200 transition-colors border border-pink-200"
-                title="Customize photos, messages & sound"
+                title="Customize photos, messages & sound" aria-label="Edit surprise"
               >
                 <Settings size={22} />
               </motion.button>
@@ -454,7 +455,7 @@ export const LandingScene: React.FC<LandingSceneProps> = ({
           style={{ left: h.x, top: h.y }}
           className="fixed pointer-events-none z-50 text-2xl"
         >
-          💖
+
         </motion.div>
       ))}
     </div>

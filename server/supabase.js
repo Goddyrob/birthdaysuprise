@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
@@ -29,6 +30,14 @@ const assertSupabase = () => {
 const assertString = (value, field, maxLength = MAX_STRING_LENGTH) => {
   if (typeof value !== 'string' || value.length > maxLength) {
     const error = new Error(`${field} is invalid or too long`);
+    error.statusCode = 400;
+    throw error;
+  }
+};
+
+const assertRequiredString = (value, field, maxLength = MAX_STRING_LENGTH) => {
+  if (typeof value !== 'string' || value.trim().length === 0 || value.length > maxLength) {
+    const error = new Error(`${field} is required and must be a non-empty string`);
     error.statusCode = 400;
     throw error;
   }
@@ -78,13 +87,21 @@ export const validateConfig = (config) => {
     throw error;
   }
 
-  ['recipientName', 'senderName', 'mainPhoto', 'polaroidText', 'cakeHeading', 'cakeCelebrationText', 'letterTitle', 'letterGreeting', 'letterClosing'].forEach((field) => {
+  ['recipientName', 'senderName', 'mainPhoto'].forEach((field) => {
     if (field === 'mainPhoto') {
       assertMediaReference(config[field], field, 'image');
     } else {
-      assertString(config[field], field);
+      assertRequiredString(config[field], field);
     }
   });
+
+  ['cakeHeading', 'cakeCelebrationText', 'letterTitle', 'letterGreeting', 'letterClosing'].forEach((field) => {
+    assertRequiredString(config[field], field);
+  });
+
+  if (config.polaroidText !== undefined) {
+    assertString(config.polaroidText, 'polaroidText');
+  }
 
   if (!Array.isArray(config.letterBody) || config.letterBody.length > 12) {
     const error = new Error('letterBody is invalid');
@@ -153,6 +170,9 @@ const parseDataUrl = (value, kind, decode = true) => {
 
   const maxBytes = kind === 'image' ? MAX_IMAGE_BYTES : MAX_AUDIO_BYTES;
   const encoded = match[2];
+  if (!encoded.length || encoded.length % 4 !== 0 || /[^A-Za-z0-9+/=]/.test(encoded) || encoded.slice(0, -2).includes('=') || !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded.slice(-4))) {
+    const error = new Error('Invalid upload encoding'); error.statusCode = 400; error.code = 'MEDIA_UPLOAD_FAILED'; throw error;
+  }
   const estimatedBytes = Math.floor(encoded.length * 0.75) - (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0);
   if (estimatedBytes > maxBytes) {
     const error = new Error(`${kind} file is too large`);
@@ -180,13 +200,13 @@ const uploadDataUrl = async (value, kind, surpriseId, label, requestId) => {
   if (!parsed) return value;
 
   const startedAt = Date.now();
-  const storagePath = `${surpriseId}/${label}.${extensionFor(parsed.contentType)}`;
+  const storagePath = `${surpriseId}/${label}-${createHash('sha256').update(parsed.buffer).digest('hex').slice(0, 24)}.${extensionFor(parsed.contentType)}`;
   try {
     const { error } = await supabase.storage.from(BUCKET).upload(storagePath, parsed.buffer, {
       contentType: parsed.contentType,
-      upsert: true,
+      upsert: false,
     });
-    if (error) throw error;
+    if (error && String(error.statusCode || error.status) !== '409' && error.error !== 'Duplicate') throw error;
     console.info(JSON.stringify({ event: 'creation_stage', requestId, stage: label.startsWith('gallery-') ? 'gallery_upload' : `${label}_upload`, status: 'ok', elapsedMs: Date.now() - startedAt, bytes: parsed.size }));
   } catch (error) {
     console.error(JSON.stringify({ event: 'creation_stage', requestId, stage: label.startsWith('gallery-') ? 'gallery_upload' : `${label}_upload`, status: 'error', elapsedMs: Date.now() - startedAt, bytes: parsed.size, category: error.code || 'storage_error' }));
@@ -214,6 +234,10 @@ export const prepareConfigForStorage = async (inputConfig, surpriseId, requestId
   assertSupabase();
   const clonedConfig = structuredClone(inputConfig);
   const { passcode, ...config } = clonedConfig;
+  const references = [config.mainPhoto, config.customAudioUrl, ...config.galleryPhotos.map(photo => photo.url)];
+  if (references.some(value => typeof value === 'string' && value.startsWith('storage:') && !value.startsWith('storage:' + surpriseId + '/'))) {
+    const error = new Error('Media does not belong to this draft'); error.statusCode = 400; throw error;
+  }
 
   const tasks = [() => uploadDataUrl(config.mainPhoto, 'image', surpriseId, 'main', requestId)];
   const hasAudio = Boolean(config.customAudioUrl);
@@ -244,13 +268,17 @@ export const uploadDraftMedia = async (creationId, files, requestId) => {
   }
   files.forEach((file) => {
     if (!file || !/^(main|audio|gallery-\d{1,2})$/.test(file.key)
-      || !['image', 'audio'].includes(file.kind) || typeof file.dataUrl !== 'string') {
+      || !['image', 'audio'].includes(file.kind) || (file.key === 'audio' ? file.kind !== 'audio' : file.kind !== 'image') || typeof file.dataUrl !== 'string') {
       const error = new Error('Invalid media upload request');
       error.statusCode = 400;
       error.code = 'VALIDATION_FAILED';
       throw error;
     }
   });
+  // A published link must not permit unauthenticated replacement of its media.
+  const { data: published, error: lookupError } = await supabase.from('surprises').select('id').eq('id', creationId).maybeSingle();
+  if (lookupError) { lookupError.statusCode = 502; throw lookupError; }
+  if (published) { const error = new Error('This surprise is already published. Start a new draft.'); error.statusCode = 409; throw error; }
   const uploaded = await mapWithConcurrency(files.map((file) => async () => ({
     key: file.key,
     reference: await uploadDataUrl(file.dataUrl, file.kind, creationId, file.key, requestId),
@@ -271,14 +299,14 @@ const resolveMedia = async (value) => {
 };
 
 export const hydrateConfigForClient = async (storedConfig) => {
-  const config = structuredClone(storedConfig);
+  const config = structuredClone(storedConfig || {});
   config.passcode = '';
   config.mainPhoto = await resolveMedia(config.mainPhoto);
   config.customAudioUrl = await resolveMedia(config.customAudioUrl);
-  config.galleryPhotos = await Promise.all(config.galleryPhotos.map(async (photo) => ({
+  config.galleryPhotos = Array.isArray(config.galleryPhotos) ? await Promise.all(config.galleryPhotos.map(async (photo) => ({
     ...photo,
-    url: await resolveMedia(photo.url),
-  })));
+    url: await resolveMedia(photo?.url),
+  }))) : [];
   return config;
 };
 
@@ -381,10 +409,96 @@ export const unlockSurprise = async (id, passcode) => {
     error.statusCode = 502;
     throw error;
   }
-  if (!data || !(await bcrypt.compare(passcode, data.passcode_hash))) {
+  if (!data || typeof data.passcode_hash !== 'string' || !(await bcrypt.compare(passcode, data.passcode_hash))) {
     const invalid = new Error('Incorrect passcode');
     invalid.statusCode = 401;
     throw invalid;
   }
   return hydrateConfigForClient(data.configuration);
+};
+
+export const createAdminSession = async (tokenHash, expiresAt) => {
+  assertSupabase();
+  await supabase.from('admin_sessions').delete().lt('expires_at', new Date().toISOString());
+  const { error } = await supabase.from('admin_sessions').insert({ token_hash: tokenHash, expires_at: expiresAt });
+  if (error) {
+    error.statusCode = 502;
+    throw error;
+  }
+};
+
+export const getAdminSession = async (tokenHash) => {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from('admin_sessions')
+    .select('expires_at')
+    .eq('token_hash', tokenHash)
+    .maybeSingle();
+  if (error) {
+    error.statusCode = 502;
+    throw error;
+  }
+  if (!data || Date.parse(data.expires_at) <= Date.now()) return null;
+  return data;
+};
+
+export const deleteAdminSession = async (tokenHash) => {
+  assertSupabase();
+  const { error } = await supabase.from('admin_sessions').delete().eq('token_hash', tokenHash);
+  if (error) {
+    error.statusCode = 502;
+    throw error;
+  }
+};
+
+export const getAdminOverview = async () => {
+  assertSupabase();
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [total, recent] = await Promise.all([
+    supabase.from('surprises').select('id', { count: 'exact', head: true }),
+    supabase.from('surprises').select('id', { count: 'exact', head: true }).gte('created_at', since),
+  ]);
+  if (total.error || recent.error) {
+    const error = total.error || recent.error;
+    error.statusCode = 502;
+    throw error;
+  }
+  return { totalSurprises: total.count || 0, createdLastSevenDays: recent.count || 0 };
+};
+
+export const getAdminSurprises = async () => {
+  assertSupabase();
+  const { data, error } = await supabase
+    .from('surprises')
+    .select('id, recipient_name, sender_name, created_at')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) {
+    error.statusCode = 502;
+    throw error;
+  }
+  return data;
+};
+
+export const getAdminAnalytics = async () => {
+  assertSupabase();
+  const today = new Date();
+  const firstDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 29));
+  const { data, error } = await supabase
+    .from('surprises')
+    .select('created_at')
+    .gte('created_at', firstDay.toISOString());
+  if (error) {
+    error.statusCode = 502;
+    throw error;
+  }
+  const daily = new Map();
+  data.forEach(({ created_at }) => {
+    const day = created_at.slice(0, 10);
+    daily.set(day, (daily.get(day) || 0) + 1);
+  });
+  return Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(firstDay.getTime() + index * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return { date, surprises: daily.get(date) || 0 };
+  });
 };

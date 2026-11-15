@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, Sparkles, ArrowRight, MailOpen, Edit3 } from 'lucide-react';
+import { ArrowRight, MailOpen, Edit3 } from 'lucide-react';
+import { Heart, Sparkles } from './DearliIcons';
 import { playEnvelopeOpenSound } from '../utils/audio';
 import confetti from 'canvas-confetti';
 
@@ -32,23 +33,23 @@ export const LetterScene: React.FC<LetterSceneProps> = ({
     setIsOpen(true);
     playEnvelopeOpenSound();
 
-    confetti({
+    confetti({ disableForReducedMotion: true,
       particleCount: 70,
       spread: 80,
       origin: { y: 0.6 },
-      colors: ['#f472b6', '#fda4af', '#f43f5e', '#fef08a']
+      colors: ['#a86473', '#fda4af', '#8b3f4a', '#fef08a']
     });
   };
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-start overflow-y-auto bg-gradient-to-br from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] select-none sm:justify-center sm:p-6 lg:p-8">
-      
+    <div className="dearli-scene dearli-scene--letter relative flex min-h-[100dvh] w-full flex-col items-center justify-start overflow-y-auto bg-gradient-to-br from-[#f7f1e6] via-[#efe5d5] to-[#e9ddc9] px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] select-none sm:justify-center sm:p-6 lg:p-8">
+
       {/* Background Soft Glow */}
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-pink-300/30 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Wrapper */}
       <div className="relative z-10 my-auto flex w-full max-w-xl flex-col items-center py-3 sm:py-0">
-        
+
         {/* Header before opened */}
         {!isOpen && (
           <motion.div
@@ -72,13 +73,13 @@ export const LetterScene: React.FC<LetterSceneProps> = ({
           <motion.div
             whileHover={{ scale: 1.04, y: -4 }}
             whileTap={{ scale: 0.96 }}
-            onClick={handleOpenEnvelope}
+            role="button" tabIndex={0} aria-label="Open the letter" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleOpenEnvelope(); } }} onClick={handleOpenEnvelope}
             className="relative flex h-44 w-[min(18rem,calc(100vw-1.5rem))] cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-white bg-gradient-to-br from-pink-200 via-rose-200 to-pink-300 shadow-2xl transition-shadow hover:shadow-pink-300/60 sm:h-56 sm:w-[21rem]"
           >
             {/* Envelope Flap Triangles */}
             <div className="absolute inset-0">
               {/* Top Flap */}
-              <div 
+              <div
                 className="absolute top-0 left-0 right-0 h-28 sm:h-32 bg-pink-300/90 border-b-2 border-white/80 shadow-md origin-top"
                 style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
               />
@@ -115,8 +116,8 @@ export const LetterScene: React.FC<LetterSceneProps> = ({
               className="relative flex w-full flex-col overflow-hidden rounded-3xl border border-pink-100 bg-white/95 p-4 shadow-[0_25px_70px_-15px_rgba(236,72,153,0.25)] backdrop-blur-xl sm:rounded-[2rem] sm:p-10"
             >
               {/* Romantic decorative corner floral accents */}
-              <div className="absolute top-3 right-4 text-pink-300 text-lg">🌸</div>
-              <div className="absolute top-3 left-4 text-pink-300 text-lg">🌸</div>
+              <div className="absolute top-3 right-4 text-pink-300 text-lg"></div>
+              <div className="absolute top-3 left-4 text-pink-300 text-lg"></div>
 
               {/* Card Header (Large typography) */}
               <div className="text-center pb-4 border-b border-pink-100/80">

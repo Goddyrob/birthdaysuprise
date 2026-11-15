@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { Sparkles } from './DearliIcons';
 import confetti from 'canvas-confetti';
 import { playCakeSliceSound } from '../utils/audio';
 
@@ -19,7 +20,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [sliceProgress, setSliceProgress] = useState(0);
   const [knifePosition, setKnifePosition] = useState<{ x: number; y: number } | null>(null);
-  
+
   const cakeAreaRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef<number | null>(null);
 
@@ -65,23 +66,23 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
     setKnifePosition(null);
     playCakeSliceSound();
 
-    confetti({
+    confetti({ disableForReducedMotion: true,
       particleCount: 100,
       spread: 90,
       origin: { y: 0.55 },
-      colors: ['#ec4899', '#f43f5e', '#fb7185', '#fcd34d', '#a78bfa']
+      colors: ['#884257', '#8b3f4a', '#b87a75', '#fcd34d', '#a78bfa']
     });
   };
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col items-center justify-start overflow-y-auto bg-gradient-to-br from-[#ffeef4] via-[#fde2e8] to-[#fcd5e2] px-3 pt-[max(4rem,calc(env(safe-area-inset-top)+3.5rem))] pb-[max(0.75rem,env(safe-area-inset-bottom))] select-none sm:justify-center sm:p-6 lg:p-8">
-      
+    <div className="dearli-scene dearli-scene--cake relative flex min-h-[100dvh] w-full flex-col items-center justify-start overflow-y-auto bg-gradient-to-br from-[#f7f1e6] via-[#efe5d5] to-[#e9ddc9] px-3 pt-[max(4rem,calc(env(safe-area-inset-top)+3.5rem))] pb-[max(0.75rem,env(safe-area-inset-bottom))] select-none sm:justify-center sm:p-6 lg:p-8">
+
       {/* Background Soft Floating Glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-rose-200/40 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
       <div className="relative z-10 my-auto flex w-full max-w-2xl flex-col items-center py-3 text-center sm:py-0">
-        
+
         {/* Title (Large typography) */}
         <motion.h1
           key={isCut ? 'cut-title' : 'uncut-title'}
@@ -95,12 +96,12 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
 
         {/* Subtitle instructions */}
         <p className="mb-3 text-xs font-medium leading-5 text-pink-700/80 sm:mb-6 sm:text-base sm:leading-normal">
-          {isCut ? 'Make a sweet wish! 🎂✨' : 'Drag your finger or mouse across the cake to slice'}
+          {isCut ? 'Make a sweet wish! ' : 'Drag your finger or mouse across the cake to slice'}
         </p>
 
         {/* Interactive Cake Area */}
         <div
-          ref={cakeAreaRef}
+          ref={cakeAreaRef} role="button" tabIndex={0} aria-label="Cut the cake" aria-disabled={isCut} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); triggerCutSuccess(); } }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -119,7 +120,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
               className="absolute pointer-events-none z-30 transform -translate-x-1/2 -translate-y-1/2 transition-transform"
               style={{ left: knifePosition.x, top: knifePosition.y }}
             >
-              <div className="text-3xl filter drop-shadow-md">🔪</div>
+              <div className="text-3xl filter drop-shadow-md"></div>
               {/* Glowing slice trail */}
               <div className="w-1.5 h-16 bg-gradient-to-b from-amber-300 via-pink-400 to-transparent blur-[1px] rounded-full mx-auto -mt-2 opacity-80" />
             </div>
@@ -127,10 +128,10 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
 
           {/* Sliced Cake Left & Right halves or Uncut Cake */}
           <div className="relative w-full h-full flex items-center justify-center">
-            
+
             {/* ILLUSTRATED PINK BIRTHDAY CAKE */}
             <div className="relative w-64 sm:w-76 flex flex-col items-center">
-              
+
               {/* Candles on top */}
               <div className="flex items-center justify-center gap-6 mb-1 z-20">
                 {[1, 2, 3].map((candle) => (
@@ -151,7 +152,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
                           animate={{ opacity: 0, y: -20, scale: 1.5 }}
                           className="text-xs text-gray-400 select-none"
                         >
-                          💨
+
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -164,7 +165,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
 
               {/* Cake Layers Wrapper */}
               <div className="relative w-full flex items-center justify-center">
-                
+
                 {/* Left Half (when sliced) */}
                 <motion.div
                   animate={isCut ? { x: -16, rotate: -2 } : { x: 0, rotate: 0 }}
@@ -173,7 +174,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
                 >
                   {/* Top Layer */}
                   <div className="w-24 sm:w-28 h-12 bg-gradient-to-b from-pink-200 via-pink-300 to-pink-400 rounded-tl-2xl shadow-sm relative border-l-2 border-t-2 border-white/60">
-                    <div className="absolute top-1 right-2 text-sm">🍓</div>
+                    <div className="absolute top-1 right-2 text-sm"></div>
                     {/* White Frosting Drips */}
                     <div className="absolute -bottom-1 left-0 right-0 h-3 bg-white/90 rounded-b-xl" />
                   </div>
@@ -181,8 +182,8 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
                   <div className="w-28 sm:w-32 h-3 bg-white shadow-xs" />
                   {/* Bottom Layer */}
                   <div className="w-32 sm:w-36 h-18 bg-gradient-to-b from-rose-200 via-rose-300 to-pink-400 rounded-bl-3xl shadow-md relative border-l-2 border-b-2 border-white/60">
-                    <div className="absolute top-2 right-4 text-sm">🍓</div>
-                    <div className="absolute bottom-2 left-3 text-xs">✨</div>
+                    <div className="absolute top-2 right-4 text-sm"></div>
+                    <div className="absolute bottom-2 left-3 text-xs"></div>
                   </div>
                 </motion.div>
 
@@ -203,7 +204,7 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
                 >
                   {/* Top Layer */}
                   <div className="w-24 sm:w-28 h-12 bg-gradient-to-b from-pink-200 via-pink-300 to-pink-400 rounded-tr-2xl shadow-sm relative border-r-2 border-t-2 border-white/60">
-                    <div className="absolute top-1 left-2 text-sm">🍓</div>
+                    <div className="absolute top-1 left-2 text-sm"></div>
                     {/* White Frosting Drips */}
                     <div className="absolute -bottom-1 left-0 right-0 h-3 bg-white/90 rounded-b-xl" />
                   </div>
@@ -211,8 +212,8 @@ export const CakeScene: React.FC<CakeSceneProps> = ({
                   <div className="w-28 sm:w-32 h-3 bg-white shadow-xs" />
                   {/* Bottom Layer */}
                   <div className="w-32 sm:w-36 h-18 bg-gradient-to-b from-rose-200 via-rose-300 to-pink-400 rounded-br-3xl shadow-md relative border-r-2 border-b-2 border-white/60">
-                    <div className="absolute top-2 left-4 text-sm">🍓</div>
-                    <div className="absolute bottom-2 right-3 text-xs">✨</div>
+                    <div className="absolute top-2 left-4 text-sm"></div>
+                    <div className="absolute bottom-2 right-3 text-xs"></div>
                   </div>
                 </motion.div>
 

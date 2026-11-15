@@ -1,8 +1,15 @@
 import 'dotenv/config';
-import { randomUUID } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import {
+  createAdminSession,
   createSurprise,
+  deleteAdminSession,
+  getAdminAnalytics,
+  getAdminOverview,
+  getAdminSession,
+  getAdminSurprises,
   getSurpriseMetadata,
   isSupabaseConfigured,
   uploadDraftMedia,
@@ -18,10 +25,85 @@ app.use((req, res, next) => {
   next();
 });
 
+// Allow the bundled Android frontend to call public surprise endpoints.
+// Admin endpoints retain their existing same-origin session policy.
+app.use('/api/surprises', (req, res, next) => {
+  const origin = req.get('origin');
+  const allowed = (process.env.MOBILE_ALLOWED_ORIGINS || 'https://localhost').split(',').map(x => x.trim());
+  if (origin && allowed.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.vary('Origin');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, X-Request-ID');
+    res.set('Access-Control-Expose-Headers', 'X-Request-ID');
+    res.set('Access-Control-Max-Age', '600');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+  }
+  next();
+});
+
 app.use(express.json({ limit: '25mb' }));
 
 const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 const attempts = new Map();
+const ADMIN_COOKIE = 'dearli_admin_session';
+const ADMIN_SESSION_TTL = 8 * 60 * 60 * 1000;
+
+const getAdminToken = (req) => {
+  const cookie = req.get('cookie') || '';
+  const value = cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${ADMIN_COOKIE}=`));
+  return value ? value.slice(ADMIN_COOKIE.length + 1) : null;
+};
+
+const hashAdminToken = (token) => createHash('sha256').update(token).digest('hex');
+const isSecureRequest = (req) => process.env.NODE_ENV === 'production' || process.env.VERCEL === '1' || req.secure || req.get('x-forwarded-proto') === 'https';
+const setAdminCookie = (req, res, token, maxAge) => {
+  res.cookie(ADMIN_COOKIE, token, {
+    httpOnly: true,
+    secure: isSecureRequest(req),
+    sameSite: 'strict',
+    path: '/',
+    maxAge,
+  });
+};
+const clearAdminCookie = (req, res) => {
+  res.clearCookie(ADMIN_COOKIE, {
+    httpOnly: true,
+    secure: isSecureRequest(req),
+    sameSite: 'strict',
+    path: '/',
+  });
+};
+
+const requireAdmin = async (req, res, next) => {
+  const token = getAdminToken(req);
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const session = await getAdminSession(hashAdminToken(token));
+    if (!session) {
+      clearAdminCookie(req, res);
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    req.adminTokenHash = hashAdminToken(token);
+    req.adminExpiresAt = session.expires_at;
+    return next();
+  } catch (error) {
+    return res.status(error.statusCode || 503).json({ error: 'Unable to verify admin session' });
+  }
+};
+
+const adminLoginAttempts = new Map();
+const allowAdminLogin = (ip) => {
+  const now = Date.now();
+  const recent = (adminLoginAttempts.get(ip) || []).filter((timestamp) => now - timestamp < 15 * 60_000);
+  if (recent.length >= 10) {
+    adminLoginAttempts.set(ip, recent);
+    return false;
+  }
+  recent.push(now);
+  adminLoginAttempts.set(ip, recent);
+  return true;
+};
 
 const allowUnlockAttempt = (key) => {
   const now = Date.now();
@@ -35,8 +117,85 @@ const allowUnlockAttempt = (key) => {
   return true;
 };
 
+app.use('/api/admin', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, persistence: isSupabaseConfigured ? 'supabase' : 'unconfigured' });
+});
+
+app.post('/api/admin/login', async (req, res) => {
+  if (!allowAdminLogin(req.ip)) return res.status(429).json({ error: 'Too many login attempts. Try again later.' });
+  const passwordHash = process.env.ADMIN_PASSWORD_HASH;
+  if (!passwordHash || typeof req.body?.password !== 'string') {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  let validPassword = false;
+  try {
+    validPassword = await bcrypt.compare(req.body.password, passwordHash);
+  } catch {
+    return res.status(503).json({ error: 'Admin authentication is not configured correctly' });
+  }
+  if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
+
+  try {
+    const token = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + ADMIN_SESSION_TTL).toISOString();
+    await createAdminSession(hashAdminToken(token), expiresAt);
+    setAdminCookie(req, res, token, ADMIN_SESSION_TTL);
+    return res.json({ authenticated: true, expiresAt });
+  } catch (error) {
+    if (error?.code === 'PGRST205' || /admin_sessions/i.test(String(error?.message || ''))) {
+      return res.status(503).json({
+        error: 'Admin setup is incomplete. Run the SQL in supabase/schema.sql before enabling owner access.',
+      });
+    }
+    return res.status(error.statusCode || 503).json({ error: 'Unable to create admin session' });
+  }
+});
+
+app.post('/api/admin/logout', requireAdmin, async (req, res) => {
+  try {
+    await deleteAdminSession(req.adminTokenHash);
+    clearAdminCookie(req, res);
+    return res.status(204).end();
+  } catch (error) {
+    return res.status(error.statusCode || 503).json({ error: 'Unable to end admin session' });
+  }
+});
+
+app.get('/api/admin/session', requireAdmin, (req, res) => {
+  res.json({ authenticated: true, expiresAt: req.adminExpiresAt });
+});
+
+app.get('/api/admin/overview', requireAdmin, async (req, res) => {
+  try {
+    return res.json(await getAdminOverview());
+  } catch (error) {
+    return res.status(error.statusCode || 503).json({ error: 'Unable to load admin overview' });
+  }
+});
+
+app.get('/api/admin/surprises', requireAdmin, async (req, res) => {
+  try {
+    return res.json({ surprises: await getAdminSurprises() });
+  } catch (error) {
+    return res.status(error.statusCode || 503).json({ error: 'Unable to load surprises' });
+  }
+});
+
+app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
+  try {
+    return res.json({ daily: await getAdminAnalytics() });
+  } catch (error) {
+    return res.status(error.statusCode || 503).json({ error: 'Unable to load analytics' });
+  }
+});
+
+app.get('/api/admin/errors', requireAdmin, (req, res) => {
+  res.json({ available: false, items: [], source: 'deployment logs' });
 });
 
 app.post('/api/surprises/media', async (req, res) => {

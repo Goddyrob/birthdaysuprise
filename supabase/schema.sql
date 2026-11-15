@@ -10,6 +10,15 @@ create table if not exists public.surprises (
 
 alter table public.surprises enable row level security;
 
+create table if not exists public.admin_sessions (
+  token_hash text primary key,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_sessions_expires_at_idx on public.admin_sessions (expires_at);
+alter table public.admin_sessions enable row level security;
+
 insert into storage.buckets (id, name, public)
 values ('surprise-media', 'surprise-media', false)
 on conflict (id) do nothing;

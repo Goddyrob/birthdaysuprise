@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, X, Sparkles, RefreshCw, Bookmark, Gift } from 'lucide-react';
+import { X, RefreshCw, Bookmark } from 'lucide-react';
+import { Heart, Sparkles, Gift } from './DearliIcons';
 import confetti from 'canvas-confetti';
 import { playKeySound, playPasscodeSuccessSound } from '../utils/audio';
 import { useModalAccessibility } from '../utils/useModalAccessibility';
@@ -12,32 +13,32 @@ interface LoveReasonsModalProps {
 }
 
 const LOVE_REASONS = [
-  "The way your eyes light up whenever you talk about things you love ✨",
-  "How you make even the most ordinary day feel like a magical adventure 🌸",
-  "Your warm, sweet smile that instantly melts away all my worries 💕",
-  "The gentle way you hold my hand when we walk together 👫",
-  "How you understand me even without speaking a single word 💖",
-  "Your goofy laugh that is completely contagious and beautiful 😄",
-  "The kindness, warmth, and pure love in your heart 🤍",
-  "How safe and peaceful I feel whenever I am with you 🏡",
-  "Your cute little habits and adorable expressions 🥺",
-  "Because you are not just my love, you are my best friend and soulmate forever ❤️"
+  "The way your eyes light up whenever you talk about things you love ",
+  "How you make even the most ordinary day feel like a magical adventure ",
+  "Your warm, sweet smile that instantly melts away all my worries ",
+  "The gentle way you hold my hand when we walk together ",
+  "How you understand me even without speaking a single word ",
+  "Your goofy laugh that is completely contagious and beautiful ",
+  "The kindness, warmth, and pure love in your heart ",
+  "How safe and peaceful I feel whenever I am with you ",
+  "Your cute little habits and adorable expressions ",
+  "Because you are not just my love, you are my best friend and soulmate forever "
 ];
 
 const LOVE_QUOTES = [
-  "In a sea of people, my eyes will always search for you. 💕",
-  "Every love story is beautiful, but ours is my absolute favorite. ✨",
-  "I loved you yesterday, love you still, always have, always will. 💖",
-  "You are my today and all of my tomorrows. 🌹",
-  "To the world you may be one person, but to me you are the whole world. 🌍❤️",
-  "I fell in love with the way you touched my soul without using your hands. ✨"
+  "In a sea of people, my eyes will always search for you. ",
+  "Every love story is beautiful, but ours is my absolute favorite. ",
+  "I loved you yesterday, love you still, always have, always will. ",
+  "You are my today and all of my tomorrows. ",
+  "To the world you may be one person, but to me you are the whole world. ",
+  "I fell in love with the way you touched my soul without using your hands. "
 ];
 
 export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onClose, recipientName }) => {
   const [activeTab, setActiveTab] = useState<'reasons' | 'quotes' | 'meter'>('reasons');
   const [revealedReasons, setRevealedReasons] = useState<number[]>([0, 1, 2]);
   const [lovePercentage, setLovePercentage] = useState(100);
-  const [loveMessage, setLoveMessage] = useState('Infinity & Beyond! 💖');
+  const [loveMessage, setLoveMessage] = useState('Infinity & Beyond! ');
   const dialogRef = useModalAccessibility(isOpen, onClose);
 
   const handleRevealNext = () => {
@@ -47,11 +48,11 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
       setRevealedReasons([...revealedReasons, nextIdx]);
       if (nextIdx === LOVE_REASONS.length - 1) {
         playPasscodeSuccessSound();
-        confetti({
+        confetti({ disableForReducedMotion: true,
           particleCount: 70,
           spread: 80,
           origin: { y: 0.6 },
-          colors: ['#ec4899', '#f43f5e', '#fda4af', '#fcd34d']
+          colors: ['#884257', '#8b3f4a', '#fda4af', '#fcd34d']
         });
       }
     }
@@ -62,18 +63,18 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
     const percent = Math.floor(Math.random() * 5) + 100; // 100% to 104%
     setLovePercentage(percent);
     const messages = [
-      'Infinite Love! You are my universe! 🌌💖',
-      '1000% Soulmate Connection! ✨❤️',
-      'True love that defies all numbers! ♾️💕',
-      'Written in the stars forever! 🌟💖'
+      'Infinite Love! You are my universe! ',
+      '1000% Soulmate Connection! ',
+      'True love that defies all numbers! ',
+      'Written in the stars forever! '
     ];
     setLoveMessage(messages[Math.floor(Math.random() * messages.length)]);
     playPasscodeSuccessSound();
-    confetti({
+    confetti({ disableForReducedMotion: true,
       particleCount: 50,
       spread: 60,
       origin: { y: 0.6 },
-      colors: ['#ec4899', '#f43f5e', '#fb7185']
+      colors: ['#884257', '#8b3f4a', '#b87a75']
     });
   };
 
@@ -152,7 +153,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
             {activeTab === 'reasons' && (
               <div className="space-y-3">
                 <p className="text-xs sm:text-sm text-pink-700/80 font-medium text-center mb-3">
-                  Little things that make my heart beat only for you, {recipientName} 🌸
+                  Little things that make my heart beat only for you, {recipientName}
                 </p>
                 {revealedReasons.map((idx) => (
                   <motion.div
@@ -182,7 +183,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
                   </div>
                 ) : (
                   <div className="p-3 rounded-2xl bg-pink-100/70 text-center text-xs font-bold text-pink-800 border border-pink-200 mt-3">
-                    ❤️ And countless a million more reasons every single day! ❤️
+                     And countless a million more reasons every single day!
                   </div>
                 )}
               </div>
@@ -231,7 +232,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
                     {loveMessage}
                   </p>
                   <p className="text-xs text-gray-600 mt-1">
-                    Tested between You & {recipientName} ❤️
+                    Tested between You & {recipientName}
                   </p>
                 </div>
 
@@ -249,7 +250,7 @@ export const LoveReasonsModal: React.FC<LoveReasonsModalProps> = ({ isOpen, onCl
           {/* Footer */}
           <div className="shrink-0 border-t border-pink-100 bg-pink-50/40 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center sm:px-6">
             <p className="font-script text-lg text-pink-600 font-semibold">
-              Forever and always with you ❤️
+              Forever and always with you
             </p>
           </div>
         </motion.div>

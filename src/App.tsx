@@ -1,3 +1,7 @@
+import { mediaDigest, findUploadReceipt, rememberUpload } from './utils/uploadReceipts';
+import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
+import { DearliHome } from './components/DearliHome';
+import { apiFetch, publicOrigin } from './utils/api';
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Gift, Settings } from 'lucide-react';
@@ -8,7 +12,6 @@ import { prepareConfigForShare } from './utils/shareMedia';
 import { clearCreatorDraft, getCreatorCreationId, loadCreatorDraft } from './utils/creatorDraft';
 import { DeveloperCredit } from './components/DeveloperCredit';
 
-const FloatingHearts = lazy(() => import('./components/FloatingHearts').then((module) => ({ default: module.FloatingHearts })));
 const MusicPlayer = lazy(() => import('./components/MusicPlayer').then((module) => ({ default: module.MusicPlayer })));
 const FloralTransition = lazy(() => import('./components/FloralTransition').then((module) => ({ default: module.FloralTransition })));
 const LoveNotesModal = lazy(() => import('./components/LoveNotesModal').then((module) => ({ default: module.LoveNotesModal })));
@@ -41,7 +44,7 @@ const buildShareableUrl = (id: unknown) => {
   if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     throw new Error('Surprise creation returned an invalid ID');
   }
-  return new URL(`/surprise/${id}`, window.location.origin).toString();
+  return new URL(`/surprise/${id}`, publicOrigin).toString();
 };
 
 const createLockedConfig = (recipientName: string, senderName: string, previewPhoto: string): AppConfig => ({
@@ -98,7 +101,7 @@ export default function App() {
     }
 
     let isMounted = true;
-    fetch(`/api/surprises/${encodeURIComponent(sharedSurpriseId)}`)
+    apiFetch(`/api/surprises/${encodeURIComponent(sharedSurpriseId)}`)
       .then(async (response) => {
         if (!response.ok) {
           const contentType = response.headers.get('content-type') || '';
@@ -135,7 +138,7 @@ export default function App() {
 
   const handleSharedUnlock = async (passcode: string) => {
     if (!sharedSurpriseId) return false;
-    const response = await fetch(`/api/surprises/${encodeURIComponent(sharedSurpriseId)}/unlock`, {
+    const response = await apiFetch(`/api/surprises/${encodeURIComponent(sharedSurpriseId)}/unlock`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ passcode }),
@@ -160,8 +163,33 @@ export default function App() {
   const [currentScene, setCurrentScene] = useState<SceneType>('landing');
   const [isFloralActive, setIsFloralActive] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      void SystemBars.setStyle({ style: currentScene === 'space' && !isSettingsOpen ? SystemBarsStyle.Dark : SystemBarsStyle.Light }).catch(() => undefined);
+    }
+  }, [currentScene, isSettingsOpen]);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isLoveReasonsOpen, setIsLoveReasonsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleNativeBack = (event: Event) => {
+      if (isFloralActive) {
+        event.preventDefault();
+        setIsFloralActive(false);
+      } else if (currentScene !== 'landing') {
+        event.preventDefault();
+        const previousScene: Record<string, SceneType> = {
+          space: 'letter', letter: 'cake', cake: 'lamp', lamp: 'landing',
+        };
+        setCurrentScene(previousScene[currentScene] || 'landing');
+      } else if (entryMode === 'demo' && !sharedSurpriseId) {
+        event.preventDefault();
+        setEntryMode('home');
+      }
+    };
+    window.addEventListener('dearli:back', handleNativeBack);
+    return () => window.removeEventListener('dearli:back', handleNativeBack);
+  }, [currentScene, entryMode, isFloralActive, sharedSurpriseId]);
 
   // Sync custom audio if configured
   useEffect(() => {
@@ -249,8 +277,15 @@ export default function App() {
         : []),
     ];
     let mediaReferences = new Map<string, string>();
-    if (mediaFiles.length > 0) {
-      const mediaBody = JSON.stringify({ creationId: requestId, files: mediaFiles });
+    const digests = new Map<string, string>();
+    const pendingMedia = [];
+    for (const file of mediaFiles) {
+      const digest = await mediaDigest(file.dataUrl); digests.set(file.key, digest);
+      const reference = findUploadReceipt(requestId, file.key, digest);
+      if (reference) mediaReferences.set(file.key, reference); else pendingMedia.push(file);
+    }
+    if (pendingMedia.length > 0) {
+      const mediaBody = JSON.stringify({ creationId: requestId, files: pendingMedia });
       const mediaPayloadBytes = new TextEncoder().encode(mediaBody).length;
       const mediaStartedAt = performance.now();
       const controller = new AbortController();
@@ -258,7 +293,7 @@ export default function App() {
       let mediaResponse: Response;
       let mediaHttpStatus = 0;
       try {
-        mediaResponse = await fetch('/api/surprises/media', {
+        mediaResponse = await apiFetch('/api/surprises/media', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId },
           body: mediaBody,
@@ -293,7 +328,13 @@ export default function App() {
         throw error;
       }
       const result = await mediaResponse.json();
-      mediaReferences = new Map((result.media || []).map((file: { key: string; reference: string }) => [file.key, file.reference]));
+      if (!Array.isArray(result.media) || pendingMedia.some(file => !result.media.some((item: {key: string; reference: string}) => item.key === file.key && typeof item.reference === 'string' && item.reference.startsWith('storage:' + requestId + '/')))) {
+        const error = new Error('The media response was incomplete'); error.name = 'ServerResponseError'; throw error;
+      }
+      for (const file of result.media as Array<{key: string; reference: string}>) {
+        mediaReferences.set(file.key, file.reference);
+        const digest = digests.get(file.key); if (digest) rememberUpload(requestId, file.key, digest, file.reference);
+      }
     }
 
     preparedConfig = {
@@ -313,7 +354,7 @@ export default function App() {
     let response: Response;
     let apiHttpStatus = 0;
     try {
-      response = await fetch('/api/surprises', {
+      response = await apiFetch('/api/surprises', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Request-ID': requestId },
         body,
@@ -354,6 +395,7 @@ export default function App() {
 
     onProgress?.('Almost ready...');
     const result = await response.json();
+    if (typeof result.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(result.id)) { const error = new Error('The creation response was incomplete'); error.name = 'ServerResponseError'; throw error; }
     const shareUrl = buildShareableUrl(result.id);
     logStage('url_available', startedAt, { payloadBytes, imageCount, id: result.id });
     await clearCreatorDraft();
@@ -442,53 +484,8 @@ export default function App() {
 
   if (entryMode === 'home') {
     return (
-      <main className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-y-auto bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] text-gray-800 sm:p-6">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.18),_transparent_35%),radial-gradient(circle_at_bottom,_rgba(251,191,36,0.15),_transparent_30%)]" />
-
-        <div className="relative z-10 w-full max-w-4xl rounded-[1.5rem] border border-pink-200/80 bg-white/75 p-5 shadow-[0_20px_80px_-25px_rgba(244,114,182,0.4)] backdrop-blur-xl sm:rounded-[2rem] sm:p-8 md:p-12">
-          <div className="text-center">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-pink-500 sm:mb-4 sm:text-xs sm:tracking-[0.35em]">Dearli</p>
-            <h1 className="mx-auto max-w-2xl font-serif text-[2rem] font-bold leading-[1.08] text-gray-800 sm:text-4xl md:text-5xl">A little love, beautifully wrapped</h1>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-5 text-gray-600 sm:mt-5 sm:text-base sm:leading-relaxed md:text-lg">
-              Create something special and share it with someone you love.
-            </p>
-          </div>
-
-          <div className="mt-5 grid gap-2.5 sm:mt-8 sm:gap-4 md:mt-10 md:grid-cols-2 md:gap-6">
-            <button
-              onClick={handleStartDemo}
-              className="group order-2 flex min-h-14 w-full items-center gap-3 rounded-xl border border-pink-200 bg-white/90 p-3.5 text-left text-gray-800 shadow-sm transition hover:bg-white active:scale-[0.99] md:order-1 md:min-h-0 md:block md:rounded-[1.5rem] md:border-pink-200 md:bg-gradient-to-br md:from-pink-500 md:to-rose-500 md:p-6 md:text-white md:shadow-lg md:shadow-pink-200 md:hover:-translate-y-1 md:hover:shadow-xl"
-            >
-              <div className="inline-flex shrink-0 rounded-full bg-pink-100 p-2 text-pink-600 md:mb-4 md:bg-white/15 md:p-3 md:text-white">
-                <Gift size={20} className="md:h-6 md:w-6" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold sm:text-base md:text-2xl">Try the demo</h2>
-                <p className="mt-0.5 hidden text-sm text-pink-50/90 md:mt-3 md:block">
-                Experience the full guided surprise flow with the default romantic message, music, and gallery.
-                </p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="group order-1 flex min-h-[4.5rem] w-full items-center gap-3 rounded-xl border border-pink-300 bg-gradient-to-r from-pink-600 to-rose-500 p-3.5 text-left text-white shadow-md shadow-pink-300/50 transition hover:shadow-lg active:scale-[0.99] md:order-2 md:min-h-0 md:block md:rounded-[1.5rem] md:border-amber-200 md:bg-gradient-to-br md:from-amber-100 md:to-orange-100 md:p-6 md:text-gray-800 md:shadow-lg md:shadow-amber-200 md:hover:-translate-y-1 md:hover:shadow-xl"
-            >
-              <div className="inline-flex shrink-0 rounded-full bg-white/15 p-2.5 md:mb-4 md:bg-white/70 md:p-3">
-                <Settings size={20} className="text-white md:h-6 md:w-6 md:text-amber-600" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold sm:text-lg md:text-2xl">Create a surprise</h2>
-                <p className="mt-0.5 hidden text-sm text-gray-600 md:mt-3 md:block">
-                  Personalize the names, photos, letter, and music, then share your link.
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <DeveloperCredit />
-
+      <main className="dearli-shell">
+        <DearliHome onDemo={handleStartDemo} onCreate={() => setIsSettingsOpen(true)} />
         {isSettingsOpen && (
           <Suspense fallback={null}>
             <SettingsModal
@@ -509,7 +506,7 @@ export default function App() {
   if (sharedSurpriseState === 'loading') {
     return (
       <main className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-gray-700">
-        Preparing your surprise...
+        Unfolding your surprise…
       </main>
     );
   }
@@ -530,7 +527,7 @@ export default function App() {
       <main className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-gray-700">
         <div>
           <h1 className="font-serif text-2xl font-bold leading-tight text-gray-800 sm:text-4xl">Unable to load surprise</h1>
-          <p className="mt-3">Please check your connection and try opening the link again.</p>
+          <p className="mt-3">Your surprise is still private. Check your connection, then try again.</p><button className="dearli-primary mx-auto mt-6" onClick={() => window.location.reload()}>Try again</button>
         </div>
       </main>
     );
@@ -539,7 +536,7 @@ export default function App() {
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-clip font-sans antialiased select-none">
       {/* Background Floating Hearts Particle Ambiance (only for pastel scenes) */}
-      {!isDarkScene && <Suspense fallback={null}><FloatingHearts count={16} /></Suspense>}
+
 
       {/* Persistent Romantic Music Player */}
       {(sharedSurpriseState === 'unlocked' || !sharedSurpriseId) && (
@@ -566,13 +563,13 @@ export default function App() {
 
       {/* Floral Blossom Burst Transition (00:03 - 00:04 in video) */}
       {isFloralActive && (
-        <Suspense fallback={<div className="sr-only" role="status">Preparing your surprise...</div>}>
+        <Suspense fallback={<div className="sr-only" role="status">Unfolding your surprise…</div>}>
           <FloralTransition isActive={isFloralActive} onComplete={handleFloralComplete} />
         </Suspense>
       )}
 
       {/* SCENE ROUTER */}
-      <Suspense fallback={<div className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 text-center text-gray-700" role="status">Preparing your surprise...</div>}>
+      <Suspense fallback={<div className="flex min-h-[100dvh] items-center justify-center bg-rose-50 px-4 text-center text-gray-700" role="status">Unfolding your surprise…</div>}>
       <AnimatePresence mode="wait">
         {currentScene === 'landing' && (
           <LandingScene

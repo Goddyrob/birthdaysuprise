@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Download, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+
 import { PhotoItem } from '../types';
 import { useModalAccessibility } from '../utils/useModalAccessibility';
 
