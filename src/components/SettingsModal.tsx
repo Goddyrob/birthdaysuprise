@@ -1,14 +1,20 @@
+import { CreatorReward, AdPrivacyOptions } from './CreatorReward';
 import { DeveloperCredit } from './DeveloperCredit';
 import { audioFileError } from '../utils/mediaFiles';
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Upload, Trash2, Plus, RefreshCw, Cake, Check, RotateCcw,  } from 'lucide-react';
+import { X, Upload, Plus, RefreshCw, Check } from './DearliIcons';
+import { CompletionChecklist, FieldError } from './SoftUI';
+import { creationErrors } from '../../shared/creationValidation.js';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import { Trash, Music, Heart, Image as ImageIcon, Key, Mail } from './DearliIcons';
 import { DEFAULT_CONFIG } from '../data/defaultData';
 import { AppConfig, PhotoItem, ShareResult } from '../types';
 import { useModalAccessibility } from '../utils/useModalAccessibility';
 import { clearCreatorDraft, loadCreatorDraft, saveCreatorDraft } from '../utils/creatorDraft';
 
+const CREATOR_CONFIG: AppConfig = {...DEFAULT_CONFIG,recipientName:'',senderName:'',passcode:'',galleryPhotos:[],letterTitle:'A letter for you',letterGreeting:'Dear you,',letterBody:[''],letterClosing:'With love',customAudioUrl:undefined};
 const MAX_GALLERY_PHOTOS = 10;
 const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
 const MAX_SELECTED_PHOTO_BYTES = 60 * 1024 * 1024;
@@ -44,7 +50,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [removedPhoto, setRemovedPhoto] = useState<{ photo: PhotoItem; index: number } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
   const [activeTab, setActiveTab] = useState<'photos' | 'text' | 'letter' | 'audio'>('photos');
-  const [tempConfig, setTempConfig] = useState<AppConfig>(config);
+  const [tempConfig, setTempConfig] = useState<AppConfig>(config.recipientName === DEFAULT_CONFIG.recipientName && config.letterBody.join('') === DEFAULT_CONFIG.letterBody.join('') ? CREATOR_CONFIG : config);
   const [savedBadge, setSavedBadge] = useState(false);
   const [shareError, setShareError] = useState('');
   const [shareUrl, setShareUrl] = useState('');
@@ -207,9 +213,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     onSave(tempConfig);
-    void saveCreatorDraft(tempConfig).catch(() => undefined);
+    try { await saveCreatorDraft(tempConfig); } catch { setShareError('This device could not save the draft. Keep this screen open and try again.'); return; }
     setSavedBadge(true);
     setTimeout(() => {
       setSavedBadge(false);
@@ -230,10 +236,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       return;
     }
     if (!draftReady) return;
-    if (!tempConfig.recipientName.trim() || !tempConfig.senderName.trim() || !/^\d{4,12}$/.test(tempConfig.passcode)) {
-      setFieldErrors({ recipientName: !tempConfig.recipientName.trim() ? 'Add the recipient’s name.' : '', senderName: !tempConfig.senderName.trim() ? 'Add your signature name.' : '', passcode: !/^\d{4,12}$/.test(tempConfig.passcode) ? 'Choose a passcode of 4 to 12 digits.' : '' });
-      setActiveTab('text');
-      setShareError('Check the highlighted details before creating your link.');
+    const errors = creationErrors(tempConfig);
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      const first = Object.keys(errors)[0];
+      setActiveTab(['recipientName','senderName','passcode'].includes(first) ? 'text' : first === 'mainPhoto' ? 'photos' : 'letter');
+      setShareError('A few personal touches are still missing. Check the highlighted field.');
+      window.setTimeout(() => { const field = document.querySelector<HTMLElement>('[data-creation-field="'+first+'"]'); field?.focus(); field?.scrollIntoView({block:'center',behavior:'smooth'}); },100);
       return;
     }
     if (tempConfig.letterBody.length > 12 || tempConfig.galleryPhotos.length > MAX_GALLERY_PHOTOS) {
@@ -283,7 +292,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     if (!window.confirm('Start over and clear this creator draft?')) return;
     setDraftDirty(false);
     await clearCreatorDraft();
-    setTempConfig(DEFAULT_CONFIG);
+    setTempConfig(CREATOR_CONFIG);
     setDraftDirty(false);
     setShareUrl('');
     setShareCopied(false);
@@ -291,7 +300,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setDraftRestored(false);
     setDraftPhotosMissing(false);
     setDraftPublished(false);
-    onSave(DEFAULT_CONFIG);
+    onSave(CREATOR_CONFIG);
   };
 
   if (!isOpen) return null;
@@ -304,7 +313,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           initial={{ scale: 0.92, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.92, opacity: 0, y: 20 }}
-          className="flex h-[100dvh] max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden border-pink-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:border"
+          className="soft-dialog creator-dialog flex h-[100dvh] max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden border-pink-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:border"
           role="dialog"
           aria-modal="true"
           aria-labelledby="settings-title"
@@ -392,9 +401,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 >
                   <Check size={14} /> Copy link
                 </button>
+                <button className="soft-button share-link" onClick={async()=>{try{if(Capacitor.isNativePlatform())await Share.share({title:'A surprise for you',url:shareUrl});else if(navigator.share)await navigator.share({title:'A surprise for you',url:shareUrl});else {await navigator.clipboard.writeText(shareUrl);setShareCopied(true);}}catch(error){if(!(error instanceof Error && error.name==='AbortError'))setShareError('Sharing was closed or unavailable. Your link is still ready to copy.');}}}>Share surprise</button>
               </div>
             )}
-            <p className="creator-intro">Choose your memories, add both names and a private passcode, then create a link. Save a draft to return later.</p>
+            <p className="creator-intro">Make it yours: both names, one personal photo, and a letter. Music is optional. Your work stays here while you create.</p><CompletionChecklist config={tempConfig}/>
             {/* TAB 1: PHOTOS */}
             {activeTab === 'photos' && (
               <div className="space-y-6">
@@ -413,7 +423,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                     <div className="space-y-2">
                       <button
-                        onClick={() => mainPhotoInputRef.current?.click()}
+                        data-creation-field="mainPhoto" onClick={() => mainPhotoInputRef.current?.click()}
                         className="px-4 py-2 bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs sm:text-sm font-medium rounded-xl border border-pink-200 flex items-center gap-2 transition-colors cursor-pointer"
                       >
                         <Upload size={16} /> Change Main Photo
@@ -424,7 +434,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <input
                         ref={mainPhotoInputRef}
                         type="file"
-                        aria-label="Upload main photo"
+                        data-creation-field="mainPhoto" aria-label="Upload main photo" aria-invalid={Boolean(fieldErrors.mainPhoto)} aria-describedby="error-mainPhoto"
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         onChange={handleMainPhotoUpload}
                         className="hidden"
@@ -433,7 +443,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                 </div>
 
-                {/* Gallery Photos (3D Space Scene) */}
+                <FieldError name="mainPhoto" errors={fieldErrors}/>{/* Gallery Photos (3D Space Scene) */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-bold text-gray-800">
@@ -523,7 +533,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    aria-label="Recipient name" aria-required="true" aria-invalid={Boolean(fieldErrors.recipientName)} aria-describedby="error-recipientName"
+                    data-creation-field="recipientName" aria-label="Recipient name" aria-required="true" aria-invalid={Boolean(fieldErrors.recipientName)} aria-describedby="error-recipientName"
                     value={tempConfig.recipientName}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, recipientName: e.target.value })
@@ -540,7 +550,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    aria-label="Sender name" aria-required="true" aria-invalid={Boolean(fieldErrors.senderName)} aria-describedby="error-senderName"
+                    data-creation-field="senderName" aria-label="Sender name" aria-required="true" aria-invalid={Boolean(fieldErrors.senderName)} aria-describedby="error-senderName"
                     value={tempConfig.senderName}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, senderName: e.target.value })
@@ -557,7 +567,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    aria-label="Passcode" aria-required="true" aria-invalid={Boolean(fieldErrors.passcode)} aria-describedby="error-passcode"
+                    data-creation-field="passcode" aria-label="Passcode" aria-required="true" aria-invalid={Boolean(fieldErrors.passcode)} aria-describedby="error-passcode"
                     maxLength={12}
                     inputMode="numeric"
                     pattern="[0-9]{4,12}"
@@ -611,19 +621,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* TAB 3: LOVE LETTER */}
             {activeTab === 'letter' && (
               <div className="space-y-4">
+                <CreatorReward color={tempConfig.sealColor} onColor={sealColor => updateTempConfig(prev => ({ ...prev, sealColor }))} />
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                     Letter Title
                   </label>
                   <input
                     type="text"
-                    aria-label="Letter title"
+                    data-creation-field="letterTitle" aria-label="Letter title" aria-required="true" aria-invalid={Boolean(fieldErrors.letterTitle)} aria-describedby="error-letterTitle"
                     value={tempConfig.letterTitle}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, letterTitle: e.target.value })
                     }
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
-                  />
+                  /><FieldError name="letterTitle" errors={fieldErrors}/>
                 </div>
 
                 <div>
@@ -632,13 +643,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    aria-label="Letter greeting"
+                    data-creation-field="letterGreeting" aria-label="Letter greeting" aria-required="true" aria-invalid={Boolean(fieldErrors.letterGreeting)} aria-describedby="error-letterGreeting"
                     value={tempConfig.letterGreeting}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, letterGreeting: e.target.value })
                     }
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
-                  />
+                  /><FieldError name="letterGreeting" errors={fieldErrors}/>
                 </div>
 
                 <div>
@@ -647,7 +658,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <textarea
                     rows={6}
-                    aria-label="Letter message paragraphs"
+                    data-creation-field="letterBody" aria-label="Letter message paragraphs" aria-required="true" aria-invalid={Boolean(fieldErrors.letterBody)} aria-describedby="error-letterBody"
                     value={tempConfig.letterBody.join('\n\n')}
                     onChange={(e) =>
                       updateTempConfig({
@@ -658,7 +669,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     }
                     placeholder="Write your beautiful love message here..."
                     className="w-full p-3.5 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm leading-relaxed"
-                  />
+                  /><FieldError name="letterBody" errors={fieldErrors}/>
                 </div>
 
                 <div>
@@ -667,13 +678,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    aria-label="Letter closing"
+                    data-creation-field="letterClosing" aria-label="Letter closing" aria-required="true" aria-invalid={Boolean(fieldErrors.letterClosing)} aria-describedby="error-letterClosing"
                     value={tempConfig.letterClosing}
                     onChange={(e) =>
                       updateTempConfig({ ...tempConfig, letterClosing: e.target.value })
                     }
                     className="w-full px-3.5 py-2 rounded-xl bg-white border border-pink-200 focus:outline-none focus:border-pink-400 text-gray-800 text-sm font-medium"
-                  />
+                  /><FieldError name="letterClosing" errors={fieldErrors}/>
                 </div>
               </div>
             )}
@@ -686,7 +697,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     Background Music Track
                   </label>
                   <p className="text-xs text-gray-600 mb-3">
-                    Upload your favorite song (MP3, WAV) or enjoy the built-in romantic melody synthesizer.
+                    Optional: add a song, or leave this surprise without uploaded music. Gentle built-in chimes remain available only when the receiver chooses Play.
                   </p>
 
                   <div className="p-4 rounded-2xl bg-pink-50/70 border border-pink-200 flex items-center justify-between">
@@ -696,7 +707,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-800">
-                          {tempConfig.musicTitle || 'Romantic Melody 🎵'}
+                          {tempConfig.musicTitle || 'Gentle chimes'}
                         </p>
                         <span className="text-xs text-pink-600 font-medium">
                           {tempConfig.customAudioUrl ? 'Custom Song Uploaded' : 'Built-in Romantic Chimes'}
@@ -723,6 +734,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
+            <AdPrivacyOptions />
             <DeveloperCredit />
           </div>
 

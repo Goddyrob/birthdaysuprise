@@ -19,18 +19,18 @@ export const playKeySound = () => {
     const ctx = getAudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    
+
     osc.type = 'sine';
     // Gentle soft key pop
     osc.frequency.setValueAtTime(520, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(780, ctx.currentTime + 0.08);
-    
+
     gain.gain.setValueAtTime(0.08, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-    
+
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     osc.start();
     osc.stop(ctx.currentTime + 0.08);
   } catch (e) {
@@ -45,17 +45,17 @@ export const playPasscodeSuccessSound = () => {
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      
+
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
-      
+
       gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.1);
       gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + i * 0.1 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.4);
-      
+
       osc.connect(gain);
       gain.connect(ctx.destination);
-      
+
       osc.start(ctx.currentTime + i * 0.1);
       osc.stop(ctx.currentTime + i * 0.1 + 0.4);
     });
@@ -69,17 +69,17 @@ export const playPullCordSound = () => {
     const ctx = getAudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    
+
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(300, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.15);
-    
+
     gain.gain.setValueAtTime(0.15, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-    
+
     osc.connect(gain);
     gain.connect(ctx.destination);
-    
+
     osc.start();
     osc.stop(ctx.currentTime + 0.15);
   } catch (e) {
@@ -206,6 +206,7 @@ class RomanticMusicPlayer {
   play() {
     if (this.isPlaying) return;
     this.isPlaying = true;
+    window.dispatchEvent(new Event('dearli:music-state'));
 
     if (this.isCustomAudio && this.audioElement) {
       this.audioElement.play().catch(() => {});
@@ -251,6 +252,7 @@ class RomanticMusicPlayer {
 
   pause() {
     this.isPlaying = false;
+    window.dispatchEvent(new Event('dearli:music-state'));
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;

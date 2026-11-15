@@ -139,12 +139,12 @@ export default function AdminApp() {
   };
 
   if (checkingSession) {
-    return <main className="grid min-h-screen place-items-center bg-[#f6f5f0] text-sm text-[#51625d]">Checking secure session...</main>;
+    return <main className="soft-admin grid min-h-screen place-items-center bg-[#f6f5f0] text-sm text-[#51625d]">Checking secure session...</main>;
   }
 
   if (!authenticated) {
     return (
-      <main className="relative grid min-h-screen place-items-center overflow-hidden bg-[#f6f5f0] px-5 py-12 text-[#17352f]">
+      <main className="soft-admin relative grid min-h-screen place-items-center overflow-hidden bg-[#f6f5f0] px-5 py-12 text-[#17352f]">
         <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-[38%] bg-[#dbe9df]" />
         <section className="relative w-full max-w-md border border-[#d3ded6] bg-[#fffefa] p-8 shadow-[0_22px_70px_-45px_rgba(23,53,47,0.5)] sm:p-10">
           <div className="mb-8 flex h-11 w-11 items-center justify-center bg-[#17352f] text-[#f5cf8d]"><KeyRound size={20} /></div>
@@ -174,7 +174,7 @@ export default function AdminApp() {
 
   const peak = Math.max(1, ...daily.map((item) => item.surprises));
   return (
-    <main className="min-h-screen bg-[#f6f5f0] text-[#17352f]">
+    <main className="soft-admin min-h-screen bg-[#f6f5f0] text-[#17352f]">
       <header className="flex min-h-20 items-center justify-between border-b border-[#dce2db] bg-[#fffefa] px-5 sm:px-10">
         <div>
           <p className="font-serif text-xl font-semibold">Dearli</p>

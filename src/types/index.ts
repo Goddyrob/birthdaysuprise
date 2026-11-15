@@ -23,6 +23,7 @@ export interface AppConfig {
   letterBody: string[];
   letterClosing: string;
   galleryPhotos: PhotoItem[];
+  sealColor?: 'wine' | 'sage' | 'gold';
   customAudioUrl?: string;
   musicTitle?: string;
 }

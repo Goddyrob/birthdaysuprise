@@ -5,6 +5,7 @@ import {createRoot} from 'react-dom/client';
 import {MotionConfig} from 'motion/react';
 import App from './App.tsx';
 import './index.css';
+import './soft-ui.css';
 
 const AdminApp = lazy(() => import('./components/AdminApp'));
 const isAdminRoute = /^\/admin\/?$/.test(window.location.pathname);

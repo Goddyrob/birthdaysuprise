@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { musicPlayer } from './audio';
 import { publicOrigin } from './api';
 const openSurprise = (value: string) => {
   try {
@@ -10,6 +11,7 @@ const openSurprise = (value: string) => {
 };
 export async function initializeNative() {
   if (!Capacitor.isNativePlatform()) return;
+  await App.addListener('appStateChange',({isActive})=>{if(!isActive)musicPlayer.pause();});
   await App.addListener('appUrlOpen', ({ url }) => openSurprise(url));
   await App.addListener('backButton', ({ canGoBack }) => {
     // Let the active dialog use its existing Escape/close behavior first.

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { creationErrors, withCreatorCover } from '../shared/creationValidation.js';
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'surprise-media';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -87,6 +88,11 @@ export const validateConfig = (config) => {
     throw error;
   }
 
+  const completionErrors = creationErrors(config);
+  if (Object.keys(completionErrors).length) {
+    const error = new Error(Object.values(completionErrors)[0]);
+    error.statusCode = 400; error.code = 'VALIDATION_FAILED'; throw error;
+  }
   ['recipientName', 'senderName', 'mainPhoto'].forEach((field) => {
     if (field === 'mainPhoto') {
       assertMediaReference(config[field], field, 'image');
@@ -99,6 +105,9 @@ export const validateConfig = (config) => {
     assertRequiredString(config[field], field);
   });
 
+  if (config.sealColor !== undefined && !['wine', 'sage', 'gold'].includes(config.sealColor)) {
+    const error = new Error('Envelope seal color is invalid'); error.statusCode = 400; throw error;
+  }
   if (config.polaroidText !== undefined) {
     assertString(config.polaroidText, 'polaroidText');
   }
@@ -310,7 +319,8 @@ export const hydrateConfigForClient = async (storedConfig) => {
   return config;
 };
 
-export const createSurprise = async (config, requestId, requestedId) => {
+export const createSurprise = async (input, requestId, requestedId) => {
+  const config = withCreatorCover(input);
   assertSupabase();
   const validationStartedAt = Date.now();
   try {

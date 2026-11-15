@@ -5,6 +5,7 @@ import { apiFetch, publicOrigin } from './utils/api';
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Gift, Settings } from 'lucide-react';
+import { creationErrors, withCreatorCover } from '../shared/creationValidation.js';
 import { DEFAULT_CONFIG } from './data/defaultData';
 import { AppConfig, SceneType, ShareResult } from './types';
 import { musicPlayer } from './utils/audio';
@@ -193,9 +194,8 @@ export default function App() {
 
   // Sync custom audio if configured
   useEffect(() => {
-    if (config.customAudioUrl) {
-      musicPlayer.setCustomAudio(config.customAudioUrl);
-    }
+    musicPlayer.pause();
+    musicPlayer.setCustomAudio(config.customAudioUrl);
   }, [config.customAudioUrl]);
 
   const persistLocalConfig = (nextConfig: AppConfig) => {
@@ -226,6 +226,7 @@ export default function App() {
     configToShare = config,
     onProgress?: (stage: string) => void,
   ): Promise<ShareResult> => {
+    if(Object.keys(creationErrors(configToShare)).length) { const error=new Error('Complete the required personal content before sharing.');error.name='ValidationError';throw error; }
     const requestId = getCreatorCreationId();
     const startedAt = performance.now();
     const logStage = (stage: string, stageStartedAt: number, details: Record<string, string | number> = {}) => {
@@ -252,7 +253,7 @@ export default function App() {
     const preparationStartedAt = performance.now();
     let preparedConfig: AppConfig;
     try {
-      preparedConfig = await prepareConfigForShare(configToShare);
+      preparedConfig = await prepareConfigForShare(withCreatorCover(configToShare));
     } catch (error) {
       console.warn(JSON.stringify({
         event: 'creation_stage',
@@ -611,6 +612,7 @@ export default function App() {
           <LetterScene
             key="letter"
             title={config.letterTitle}
+            sealColor={config.sealColor}
             greeting={config.letterGreeting}
             body={config.letterBody}
             closing={config.letterClosing}

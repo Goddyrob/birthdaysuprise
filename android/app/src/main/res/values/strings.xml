@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dearli</string>
+    <string name="title_activity_main">Dearli</string>
+    <string name="package_name">net.godswillrobwet.dearli</string>
+    <string name="custom_url_scheme">net.godswillrobwet.dearli</string>
+</resources>

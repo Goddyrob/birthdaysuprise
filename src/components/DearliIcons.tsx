@@ -13,3 +13,8 @@ export const Share2=icon('Share2', 'M8 12h12 M16 8l4 4-4 4 M11 4H4v16h7');
 export const Camera=icon('Camera', 'M3 7h4l2-3h6l2 3h4v13H3z M16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0');
 
 export const Trash=icon('Trash', 'M4 6h16 M9 6V3h6v3 M6 6l1 15h10l1-15 M10 10v7 M14 10v7');
+export const Check=icon('Check','m5 12 4 4L19 6');
+export const X=icon('X','m6 6 12 12 M18 6 6 18');
+export const Plus=icon('Plus','M12 4v16 M4 12h16');
+export const Upload=icon('Upload','M12 16V3 M7 8l5-5 5 5 M4 15v6h16v-6');
+export const RefreshCw=icon('RefreshCw','M20 8a8 8 0 1 0 0 8 M20 3v5h-5');

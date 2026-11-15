@@ -1,4 +1,4 @@
-import { AppConfig } from '../types';
+import type { AppConfig } from '../types';
 
 const defaultSurpriseImage = '/default-surprise.svg';
 

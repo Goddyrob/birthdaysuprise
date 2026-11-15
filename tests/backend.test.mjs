@@ -31,8 +31,13 @@ const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listeni
 after(()=>{server.closeAllConnections();server.close();stub.closeAllConnections();stub.close()});
 const origin=`http://127.0.0.1:${server.address().port}`;
 const request=(url,body,headers={})=>fetch(origin+url,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...headers},body:body===undefined?undefined:JSON.stringify(body)});
-const config=()=>({recipientName:'Dearli QA recipient',senderName:'QA sender',mainPhoto:'/default-surprise.svg',passcode:'12345678',cakeHeading:'Cut the cake',cakeCelebrationText:'A little celebration',letterTitle:'QA letter',letterGreeting:'Hello',letterBody:['TEST CONTENT ONLY'],letterClosing:'With care',galleryPhotos:[],polaroidText:'QA',musicTitle:'QA'});
+const config=()=>({recipientName:'Dearli QA recipient',senderName:'QA sender',mainPhoto:'data:image/png;base64,iVBORw0KGgo=',passcode:'12345678',cakeHeading:'Cut the cake',cakeCelebrationText:'A little celebration',letterTitle:'QA letter',letterGreeting:'Hello',letterBody:['ISOLATED TEST CONTENT ONLY — a personal verification letter'],letterClosing:'With care',galleryPhotos:[],polaroidText:'QA',musicTitle:'QA'});
 const png='data:image/png;base64,iVBORw0KGgo=';
+test('optional seal colors validate without making customization mandatory',()=>{
+ assert.doesNotThrow(()=>validateConfig(config()));
+ for(const sealColor of ['wine','sage','gold'])assert.doesNotThrow(()=>validateConfig({...config(),sealColor}));
+ for(const sealColor of ['red',{},17])assert.throws(()=>validateConfig({...config(),sealColor}),{statusCode:400});
+});
 let id;
 test('health and mobile CORS are explicit; unrelated origins receive no permission',async()=>{
  assert.equal((await request('/api/health')).status,200);
@@ -47,7 +52,7 @@ test('malformed JSON returns a safe structured error',async()=>{const r=await fe
 test('creation validates through HTTP and persists only hashed passcodes',async()=>{assert.equal((await request('/api/surprises',{config:{}})).status,400);id=randomUUID();const r=await request('/api/surprises',{config:config(),creationId:id});assert.equal(r.status,201);assert.equal((await r.json()).id,id);assert.equal(records.get(id).configuration.passcode,undefined);assert.match(records.get(id).passcode_hash,/^\$2/)});
 test('retrying creation ID returns the same surprise without another insert',async()=>{const size=records.size;const r=await request('/api/surprises',{config:config(),creationId:id});assert.equal(r.status,201);assert.equal((await r.json()).id,id);assert.equal(records.size,size)});
 test('metadata does not expose letter, passcode hash or locked configuration',async()=>{const r=await request('/api/surprises/'+id);assert.equal(r.status,200);const json=await r.json();assert.equal(json.config,undefined);assert.equal(json.configuration,undefined);assert.equal(json.passcode_hash,undefined);assert.equal(json.passcodeLength,8)});
-test('wrong passcode fails; correct passcode returns the intended letter without passcode',async()=>{assert.equal((await request('/api/surprises/'+id+'/unlock',{passcode:'0000'})).status,401);const r=await request('/api/surprises/'+id+'/unlock',{passcode:'12345678'});assert.equal(r.status,200);const json=await r.json();assert.equal(json.config.letterBody[0],'TEST CONTENT ONLY');assert.equal(json.config.passcode,'')});
+test('wrong passcode fails; correct passcode returns the intended letter without passcode',async()=>{assert.equal((await request('/api/surprises/'+id+'/unlock',{passcode:'0000'})).status,401);const r=await request('/api/surprises/'+id+'/unlock',{passcode:'12345678'});assert.equal(r.status,200);const json=await r.json();assert.equal(json.config.letterBody[0],'ISOLATED TEST CONTENT ONLY — a personal verification letter');assert.equal(json.config.passcode,'')});
 test('missing and malformed surprise IDs do not expose data',async()=>{for(const key of ['not-a-uuid',randomUUID()])assert.equal((await request('/api/surprises/'+key)).status,404)});
 test('media upload returns a private storage reference',async()=>{const r=await request('/api/surprises/media',{creationId:randomUUID(),files:[{key:'main',kind:'image',dataUrl:png}]});assert.equal(r.status,200);assert.match((await r.json()).media[0].reference,/^storage:/)});
 test('published surprise media cannot be overwritten without authorization',async()=>{const r=await request('/api/surprises/media',{creationId:id,files:[{key:'main',kind:'image',dataUrl:png}]});assert.equal(r.status,409)});

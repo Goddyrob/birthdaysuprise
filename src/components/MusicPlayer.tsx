@@ -25,7 +25,9 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
   useEffect(() => {
     // Check initial state
-    setIsPlaying(musicPlayer.getIsPlaying());
+    const sync=()=>setIsPlaying(musicPlayer.getIsPlaying());sync();
+    window.addEventListener('dearli:music-state',sync);
+    return ()=>window.removeEventListener('dearli:music-state',sync);
   }, []);
 
   const handleToggle = () => {
@@ -58,7 +60,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   };
 
   return (
-    <div className="fixed left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] z-40 flex items-center gap-2 sm:left-4 sm:top-4">
+    <div data-theme={dark ? 'dark' : 'light'} className="soft-music fixed left-[max(0.5rem,env(safe-area-inset-left))] top-[max(0.5rem,env(safe-area-inset-top))] z-40 flex items-center gap-2 sm:left-4 sm:top-4">
       <div
         className={`flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md transition-all shadow-md ${
           dark

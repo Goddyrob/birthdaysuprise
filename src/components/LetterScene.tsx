@@ -1,3 +1,5 @@
+import { SEAL_COLORS } from '../utils/ads';
+import type { SealColor } from '../utils/ads';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, MailOpen, Edit3 } from 'lucide-react';
@@ -7,6 +9,7 @@ import confetti from 'canvas-confetti';
 
 interface LetterSceneProps {
   title: string;
+  sealColor?: SealColor;
   greeting: string;
   body: string[];
   closing: string;
@@ -18,6 +21,7 @@ interface LetterSceneProps {
 
 export const LetterScene: React.FC<LetterSceneProps> = ({
   title,
+  sealColor = 'wine',
   greeting,
   body,
   closing,
@@ -94,7 +98,9 @@ export const LetterScene: React.FC<LetterSceneProps> = ({
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              className="relative z-20 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg border-2 border-white flex items-center justify-center"
+              data-seal-color={sealColor}
+              style={{ backgroundColor: SEAL_COLORS[sealColor] || SEAL_COLORS.wine }}
+              className="dearli-wax-seal relative z-20 w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-lg border-2 border-white flex items-center justify-center"
             >
               <Heart size={26} className="fill-white text-white filter drop-shadow-sm" />
             </motion.div>
